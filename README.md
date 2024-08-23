@@ -30,7 +30,7 @@ git clone https://github.com/RayShark0605/AutoOperateLib
 
 以下示例展示了如何录制键盘和鼠标操作，并将其保存到文件中，随后加载并回放这些操作。
 ```cpp
-#include "AutoOperate.h"
+#include "AutoOperateLib.h"
 
 int main()
 {
@@ -57,7 +57,7 @@ int main()
 
 该示例展示了如何截取屏幕特定区域并保存到文件，同时将内容复制到剪贴板。
 ```cpp
-#include "AutoOperate.h"
+#include "AutoOperateLib.h"
 
 int main()
 {
@@ -77,7 +77,7 @@ int main()
 
 该示例展示了如何获取所有打开的窗口，并将指定窗口置于屏幕中央。
 ```cpp
-#include "AutoOperate.h"
+#include "AutoOperateLib.h"
 
 int main()
 {
