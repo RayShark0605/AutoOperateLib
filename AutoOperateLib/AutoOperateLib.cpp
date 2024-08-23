@@ -356,6 +356,23 @@ void MouseMiddleClick(const AO_Point& point, int timeIntervalMS)
     MouseMiddleUp(point);
 }
 
+void MouseWheel(int delta)
+{
+    mouse_event(MOUSEEVENTF_WHEEL, 0, 0, delta, 0);
+}
+void MouseWheel(int x, int y, int delta, int timeIntervalMS)
+{
+    MouseMoveTo(x, y);
+    WaitForMS(timeIntervalMS);
+    MouseWheel(delta);
+}
+void MouseWheel(const AO_Point& point, int delta, int timeIntervalMS)
+{
+    MouseMoveTo(point.x, point.y);
+    WaitForMS(timeIntervalMS);
+    MouseWheel(delta);
+}
+
 void KeyboardDown(BYTE key)
 {
     keybd_event(key, 0, 0, 0);
@@ -401,6 +418,7 @@ void AO_ActionRecorder::StartRecording()
 
     // 启动钩子和消息循环的线程
     hookThread = thread(&AO_ActionRecorder::MessageLoop, this);
+    SetThreadPriority(hookThread.native_handle(), THREAD_PRIORITY_HIGHEST);
 }
 void AO_ActionRecorder::StopRecording()
 {
@@ -517,10 +535,115 @@ void AO_ActionRecorder::MessageLoop()
             TranslateMessage(&msg);
             DispatchMessage(&msg);
         }
-        Sleep(50); // 避免忙等待
+        Sleep(100); // 避免忙等待
     }
 
     // 清理钩子
     UnhookWindowsHookEx(keyboardHook);
     UnhookWindowsHookEx(mouseHook);
 }
+
+AO_ActionSimulator::AO_ActionSimulator() : isRunning(false), isPaused(false)
+{
+}
+void AO_ActionSimulator::Start(const vector<AO_ActionRecord>& records)
+{
+    this->records = records;
+    isRunning = true;
+    isPaused = false;
+
+    simulationThread = thread(&AO_ActionSimulator::SimulateActions, this);
+}
+void AO_ActionSimulator::WaitForEnd()
+{
+    if (simulationThread.joinable())
+    {
+        simulationThread.join();
+    }
+}
+void AO_ActionSimulator::Pause()
+{
+    unique_lock<mutex> lock(mtx);
+    isPaused = true;
+}
+void AO_ActionSimulator::Resume()
+{
+    unique_lock<mutex> lock(mtx);
+    isPaused = false;
+    cv.notify_one();
+}
+void AO_ActionSimulator::Stop()
+{
+    isRunning = false;
+    if (simulationThread.joinable())
+    {
+        simulationThread.join();
+    }
+}
+void AO_ActionSimulator::SimulateActions()
+{
+    AO_Timer timer;
+    timer.Start();
+    for (const AO_ActionRecord& record : records)
+    {
+        while (isPaused)
+        {
+            unique_lock<mutex> lock(mtx);
+            cv.wait(lock, [this]() { return !isPaused; });
+        }
+
+        if (!isRunning)
+        {
+            break;
+        }
+
+        const double elapsed = timer.ElapsedMilliseconds();
+        if (record.timeSinceStart > elapsed)
+        {
+            this_thread::sleep_for(chrono::milliseconds(static_cast<int>(record.timeSinceStart - elapsed)));
+        }
+
+        PerformAction(record);
+    }
+    isRunning = false;
+}
+void AO_ActionSimulator::PerformAction(const AO_ActionRecord& record)
+{
+    switch (record.actionType)
+    {
+    case AO_ActionType::KeyDown:
+        KeyboardDown(record.data.keyboard.vkCode);
+        break;
+    case AO_ActionType::KeyUp:
+        KeyboardUp(record.data.keyboard.vkCode);
+        break;
+    case AO_ActionType::MouseMove:
+        MouseMoveTo(record.data.mouseMove.position);
+        break;
+    case AO_ActionType::MouseLeftDown:
+        MouseLeftDown(record.data.mouseClick.position);
+        break;
+    case AO_ActionType::MouseLeftUp:
+        MouseLeftUp(record.data.mouseClick.position);
+        break;
+    case AO_ActionType::MouseRightDown:
+        MouseRightDown(record.data.mouseClick.position);
+        break;
+    case AO_ActionType::MouseRightUp:
+        MouseRightUp(record.data.mouseClick.position);
+        break;
+    case AO_ActionType::MouseMiddleDown:
+        MouseMiddleDown(record.data.mouseClick.position);
+        break;
+    case AO_ActionType::MouseMiddleUp:
+        MouseMiddleUp(record.data.mouseClick.position);
+        break;
+    case AO_ActionType::MouseWheel:
+        MouseWheel(record.data.mouseWheel.position, record.data.mouseWheel.delta);
+        break;
+    default:
+        break;
+    }
+}
+
+

@@ -7,6 +7,7 @@
 #include <unordered_map>
 #include <string>
 #include <sstream>
+#include <condition_variable>
 
 // 二维点
 struct AO_Point
@@ -186,6 +187,11 @@ void MouseMiddleClick(int timeIntervalMS = 100);
 void MouseMiddleClick(int x, int y, int timeIntervalMS = 100);
 void MouseMiddleClick(const AO_Point& point, int timeIntervalMS = 100);
 
+// 鼠标滚轮滚动，当滚轮向上/向下滚动最小单位时，delta值是120/-120
+void MouseWheel(int delta);
+void MouseWheel(int x, int y, int delta, int timeIntervalMS = 100);   // 将鼠标指针移动到(x, y)处再滚动滚轮
+void MouseWheel(const AO_Point& point, int delta, int timeIntervalMS = 100);
+
 // 常用修饰键，更多修饰键参考https://learn.microsoft.com/zh-cn/windows/win32/inputdev/virtual-key-codes
 enum AO_ModifierKey : BYTE
 {
@@ -251,7 +257,24 @@ private:
 // 键鼠操作模拟器
 class AO_ActionSimulator
 {
+public:
+    AO_ActionSimulator();
+    void Start(const std::vector<AO_ActionRecord>& records); // 开始模拟（异步方式），不会阻塞当前线程
+    void WaitForEnd(); // 等待模拟结束，这会阻塞当前线程       
+    void Pause();      // 暂停
+    void Resume();     // 从暂停中恢复
+    void Stop();       // 停止
 
+private:
+    std::vector<AO_ActionRecord> records;
+    bool isRunning;
+    bool isPaused;
+    std::thread simulationThread;
+    std::condition_variable cv;
+    std::mutex mtx;
+
+    void SimulateActions();
+    void PerformAction(const AO_ActionRecord& record);
 };
 
 
