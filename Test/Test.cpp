@@ -8,7 +8,7 @@ int main(int argc, char* argv[])
 {
     vector<AO_ActionRecord> records;
 
-    cout << "两秒后开始记录！" << endl;
+    cout << "三秒后开始记录！" << endl;
     WaitForS(2);
 
     {

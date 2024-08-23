@@ -1,28 +1,33 @@
 @echo off
 setlocal enabledelayedexpansion
 
-rem 设置文件大小阈值，1MB = 1048576字节
-set "threshold=524288"
+chcp 65001 >nul
 
-rem 如果.gitignore文件不存在，创建一个新的
-if not exist .gitignore (
-    echo # Auto-generated .gitignore for files larger than 1MB> .gitignore
-    echo. >> .gitignore
-)
+:: 定义文件大小阈值（0.5MB = 524288字节）
+set "maxSize=524288"
 
-rem 遍历当前文件夹及其子文件夹中的所有文件
+:: 创建/清空 .gitignore 文件
+echo. > .gitignore
+
+:: 递归遍历当前目录及其子目录中的所有文件
 for /r %%f in (*) do (
-    rem 获取文件大小
-    set "size=%%~zf"
-    
-    rem 判断文件大小是否超过阈值
-    if !size! gtr %threshold% (
-        rem 获取文件的相对路径并写入.gitignore
-        set "relativePath=%%f"
-        set "relativePath=!relativePath:%cd%\=!"
-        echo !relativePath!>> .gitignore
+    :: 获取文件相对于当前目录的路径
+    set "filePath=%%f"
+    set "relativePath=!filePath:%cd%\=!"
+
+    :: 忽略 .git 目录及其子目录中的文件
+    if /i "!relativePath:~0,4!" neq ".git" (
+        :: 获取文件大小
+        set "size=%%~zf"
+
+        :: 如果文件大小超过指定阈值，将其路径写入 .gitignore
+        if !size! gtr %maxSize% (
+            :: 替换路径中的反斜杠为斜杠，并将路径写入 .gitignore
+            set "relativePath=!relativePath:\=/!"
+            echo !relativePath! >> .gitignore
+        )
     )
 )
 
-echo Done! Files larger than 1MB have been added to .gitignore.
+echo 完成，已将超过 0.5MB 的文件路径写入 .gitignore
 pause
