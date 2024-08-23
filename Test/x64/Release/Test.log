@@ -1,7 +1,7 @@
 ﻿  Test.cpp
   正在生成代码
-  107 of 278 functions (38.5%) were compiled, the rest were copied from previous compilation.
-    72 functions were new in current compilation
-    26 functions had inline decision re-evaluated but remain unchanged
+  33 of 192 functions (17.2%) were compiled, the rest were copied from previous compilation.
+    18 functions were new in current compilation
+    27 functions had inline decision re-evaluated but remain unchanged
   已完成代码的生成
   Test.vcxproj -> C:\Users\localuser\Desktop\AutoOperateLib\x64\Release\Test.exe

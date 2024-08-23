@@ -2,17 +2,88 @@
 
 #include <iomanip>
 #include <sstream>
+#include <algorithm>
+#include <fstream>
+#include <gdiplus.h>
 
 using namespace std;
 
-AO_Point::AO_Point() {}
+AO_Point::AO_Point()
+{
+    x = y = 0;
+}
 AO_Point::AO_Point(int x, int y) :x(x), y(y) {}
 AO_Point::AO_Point(POINT pt)
 {
     x = pt.x;
     y = pt.y;
 }
+POINT AO_Point::GetWin32Point() const
+{
+    POINT pt;
+    pt.x = x;
+    pt.y = y;
+    return pt;
+}
 
+AO_Rect::AO_Rect()
+{
+    leftTop = AO_Point(0, 0);
+    rightBottom = AO_Point(0, 0);
+    width = height = 0;
+}
+AO_Rect::AO_Rect(const AO_Point& leftTop, const AO_Point& rightBottom)
+{
+    this->leftTop = leftTop;
+    this->rightBottom = rightBottom;
+    width = rightBottom.x - leftTop.x;
+    height = rightBottom.y - leftTop.y;
+}
+AO_Rect::AO_Rect(const AO_Point& leftTop, int width, int height)
+{
+    this->leftTop = leftTop;
+    this->width = width;
+    this->height = height;
+    rightBottom = AO_Point(leftTop.x + width, leftTop.y + height);
+}
+AO_Rect::AO_Rect(int leftTopX, int leftTopY, int width, int height)
+{
+    leftTop = AO_Point(leftTopX, leftTopY);
+    this->width = width;
+    this->height = height;
+    rightBottom = AO_Point(leftTopX + width, leftTopY + height);
+}
+AO_Rect::AO_Rect(const RECT& rect)
+{
+    leftTop = AO_Point(rect.left, rect.top);
+    rightBottom = AO_Point(rect.right, rect.bottom);
+    width = rect.right - rect.left;
+    height = rect.bottom - rect.top;
+}
+RECT AO_Rect::GetWin32Rect() const
+{
+    RECT rect;
+    rect.left = leftTop.x;
+    rect.bottom = rightBottom.y;
+    rect.right = rightBottom.x;
+    rect.top = leftTop.y;
+    return rect;
+}
+
+AO_Rect AO_MonitorInfo::GetRect() const
+{
+    return AO_Rect(leftTop, width, height);
+}
+
+wstring StringToWString(const string& str)
+{
+    int len;
+    const int slength = static_cast<int>(str.length());
+    len = MultiByteToWideChar(CP_ACP, 0, str.c_str(), slength, 0, 0);
+    wstring r(len, L'\0');
+    MultiByteToWideChar(CP_ACP, 0, str.c_str(), slength, &r[0], len);
+    return r;
+}
 string WCharToString(const wchar_t* wchar)
 {
     char buffer[256];
@@ -182,6 +253,116 @@ void WaitForMin(int minutes)
 void WaitForHour(int hours)
 {
     this_thread::sleep_for(chrono::hours(hours));
+}
+
+bool SaveRecordsToTxtFile(const vector<AO_ActionRecord>& records, const string& filePath)
+{
+    ofstream outFile(filePath);
+    if (!outFile.is_open())
+    {
+        return false;
+    }
+    for (const AO_ActionRecord& record : records)
+    {
+        outFile << "ActionType: " << static_cast<int>(record.actionType) << ", TimeSinceStart: " << record.timeSinceStart << "ms" << endl;
+        switch (record.actionType)
+        {
+        case AO_ActionType::KeyDown:
+        case AO_ActionType::KeyUp:
+            outFile << "  vkCode: " << record.data.keyboard.vkCode << endl;;
+            break;
+        case AO_ActionType::MouseMove:
+            outFile << "  MouseMove Position: (" << record.data.mouseMove.position.x << ", " << record.data.mouseMove.position.y << ")" << endl;
+            break;
+        case AO_ActionType::MouseLeftDown:
+        case AO_ActionType::MouseLeftUp:
+        case AO_ActionType::MouseRightDown:
+        case AO_ActionType::MouseRightUp:
+        case AO_ActionType::MouseMiddleDown:
+        case AO_ActionType::MouseMiddleUp:
+            outFile << "  MouseClick Position: (" << record.data.mouseClick.position.x << ", " << record.data.mouseClick.position.y << ")" << endl;
+            break;
+        case AO_ActionType::MouseWheel:
+            outFile << "  MouseWheel Position: (" << record.data.mouseWheel.position.x << ", " << record.data.mouseWheel.position.y << "), Delta: " << record.data.mouseWheel.delta << endl;
+            break;
+        default:
+            outFile << "  Unknown action type" << endl;
+            break;
+        }
+    }
+    outFile.close();
+    return true;
+}
+vector<AO_ActionRecord> LoadRecordsFromTxtFile(const string& filePath)
+{
+    ifstream inFile(filePath);
+
+    if (!inFile.is_open())
+    {
+        return {};
+    }
+
+    vector<AO_ActionRecord> records;
+    string line;
+    while (getline(inFile, line))
+    {
+        if (line.find("ActionType:") == string::npos)
+        {
+            continue;
+        }
+        int actionTypeInt = 0;
+        double timeSinceStart = 0;
+
+        {
+            istringstream iss(line);
+            char c = 0;
+            iss >> skipws >> line >> actionTypeInt >> c >> line >> timeSinceStart;
+        }
+        
+        AO_ActionRecord currentRecord;
+        currentRecord.actionType = static_cast<AO_ActionType>(actionTypeInt);
+        currentRecord.timeSinceStart = timeSinceStart;
+
+        if (!getline(inFile, line))
+        {
+            break;
+        }
+        istringstream iss(line);
+        if (line.find("vkCode:") != string::npos)
+        {
+            DWORD vkCode = 0;
+            iss >> line >> vkCode;
+            currentRecord.data.keyboard.vkCode = vkCode;
+            records.push_back(currentRecord);
+        }
+        else if (line.find("MouseMove Position:") != string::npos)
+        {
+            int x = 0, y = 0;
+            char c = 0;
+            iss >> line >> line >> c >> x >> c >> y;
+            currentRecord.data.mouseMove.position = AO_Point(x, y);
+            records.push_back(currentRecord);
+        }
+        else if (line.find("MouseClick Position:") != string::npos)
+        {
+            int x = 0, y = 0;
+            char c = 0;
+            iss >> line >> line >> c >> x >> c >> y;
+            currentRecord.data.mouseClick.position = AO_Point(x, y);
+            records.push_back(currentRecord);
+        }
+        else if (line.find("MouseWheel Position:") != string::npos)
+        {
+            int x = 0, y = 0, delta = 0;
+            char c = 0;
+            iss >> line >> line >> c >> x >> c >> y >> line >> line >> delta;
+            currentRecord.data.mouseWheel.position = AO_Point(x, y);
+            currentRecord.data.mouseWheel.delta = delta;
+            records.push_back(currentRecord);
+        }
+    }
+    inFile.close();
+    return records;
 }
 
 AO_Point GetMousePos()
@@ -535,7 +716,6 @@ void AO_ActionRecorder::MessageLoop()
             TranslateMessage(&msg);
             DispatchMessage(&msg);
         }
-        Sleep(100); // 避免忙等待
     }
 
     // 清理钩子
@@ -553,6 +733,8 @@ void AO_ActionSimulator::Start(const vector<AO_ActionRecord>& records)
     isPaused = false;
 
     simulationThread = thread(&AO_ActionSimulator::SimulateActions, this);
+    const HANDLE threadHandle = simulationThread.native_handle();
+    SetThreadPriority(threadHandle, THREAD_PRIORITY_HIGHEST);
 }
 void AO_ActionSimulator::WaitForEnd()
 {
@@ -570,7 +752,7 @@ void AO_ActionSimulator::Resume()
 {
     unique_lock<mutex> lock(mtx);
     isPaused = false;
-    cv.notify_one();
+    conditionVariable.notify_one();
 }
 void AO_ActionSimulator::Stop()
 {
@@ -589,7 +771,7 @@ void AO_ActionSimulator::SimulateActions()
         while (isPaused)
         {
             unique_lock<mutex> lock(mtx);
-            cv.wait(lock, [this]() { return !isPaused; });
+            conditionVariable.wait(lock, [this]() { return !isPaused; });
         }
 
         if (!isRunning)
@@ -645,5 +827,437 @@ void AO_ActionSimulator::PerformAction(const AO_ActionRecord& record)
         break;
     }
 }
+
+bool CopyTextToClipboard(const string& text)
+{
+    if (!OpenClipboard(nullptr))
+    {
+        return false;
+    }
+
+    // 清空剪切板
+    if (!EmptyClipboard())
+    {
+        CloseClipboard();
+        return false;
+    }
+
+    // 为字符串分配全局内存
+    const HGLOBAL hGlobal = GlobalAlloc(GMEM_MOVEABLE, (text.size() + 1) * sizeof(char));
+    if (!hGlobal)
+    {
+        CloseClipboard();
+        return false;
+    }
+
+    // 将字符串复制到全局内存
+    const LPVOID pGlobal = GlobalLock(hGlobal);
+    memcpy(pGlobal, text.c_str(), text.size() + 1);
+    GlobalUnlock(hGlobal);
+
+    // 将全局内存内容设置为剪切板文本数据
+    if (!SetClipboardData(CF_TEXT, hGlobal))
+    {
+        GlobalFree(hGlobal);
+        CloseClipboard();
+        return false;
+    }
+
+    CloseClipboard();
+    return true;
+}
+
+void PasteTextFromClipboard()
+{
+    keybd_event(VK_CONTROL, 0, 0, 0);
+    keybd_event('V', 0, 0, 0);
+    keybd_event('V', 0, KEYEVENTF_KEYUP, 0);
+    keybd_event(VK_CONTROL, 0, KEYEVENTF_KEYUP, 0);
+}
+
+bool GetClipboardContents(string& text)
+{
+    if (!OpenClipboard(nullptr))
+    {
+        return false;
+    }
+    const HANDLE hData = GetClipboardData(CF_TEXT);
+    if (!hData)
+    {
+        CloseClipboard();
+        return false;
+    }
+    const char* pText = static_cast<char*>(GlobalLock(hData));
+    if (!pText)
+    {
+        GlobalUnlock(hData);
+        CloseClipboard();
+        return false;
+    }
+    text = string(pText);
+    GlobalUnlock(hData);
+    CloseClipboard();
+    return true;
+}
+
+#pragma comment (lib,"Gdiplus.lib")
+
+// 辅助函数：获取图像编码器的CLSID
+int GetEncoderClsid(const WCHAR* format, CLSID* pClsid)
+{
+    UINT num = 0; // 编码器的数量
+    UINT size = 0; // 图像编码器的大小（以字节为单位）
+
+    Gdiplus::ImageCodecInfo* pImageCodecInfo = nullptr;
+
+    Gdiplus::GetImageEncodersSize(&num, &size);
+    if (size == 0)
+    {
+        return -1; // 没有找到编码器
+    }
+
+    pImageCodecInfo = (Gdiplus::ImageCodecInfo*)(malloc(size));
+    if (!pImageCodecInfo)
+    {
+        return -1; // 内存分配失败
+    }
+
+    Gdiplus::GetImageEncoders(num, size, pImageCodecInfo);
+
+    for (UINT i = 0; i < num; ++i)
+    {
+        if (wcscmp(pImageCodecInfo[i].MimeType, format) == 0)
+        {
+            *pClsid = pImageCodecInfo[i].Clsid;
+            free(pImageCodecInfo);
+            return i; // 找到了编码器
+        }
+    }
+
+    free(pImageCodecInfo);
+    return -1; // 没有找到编码器
+}
+bool CaptureScreenToFile(const AO_Rect& rect, const string& filePath)
+{
+    const wstring wFilePath = StringToWString(filePath);
+
+    // 初始化GDI+
+    Gdiplus::GdiplusStartupInput gdiplusStartupInput;
+    ULONG_PTR gdiplusToken;
+    Gdiplus::GdiplusStartup(&gdiplusToken, &gdiplusStartupInput, nullptr);
+
+    // 获取屏幕设备上下文
+    const HDC screenDC = GetDC(nullptr);
+    const HDC memDC = CreateCompatibleDC(screenDC);
+
+    // 创建兼容的位图
+    const HBITMAP hBitmap = CreateCompatibleBitmap(screenDC, rect.width, rect.height);
+    const HGDIOBJ oldBitmap = SelectObject(memDC, hBitmap);
+
+    // 从屏幕设备上下文中复制内容到内存设备上下文中
+    BitBlt(memDC, 0, 0, rect.width, rect.height, screenDC, rect.leftTop.x, rect.leftTop.y, SRCCOPY);
+
+    // 创建GDI+ Bitmap对象
+    Gdiplus::Bitmap* bitmap = Gdiplus::Bitmap::FromHBITMAP(hBitmap, nullptr);
+
+    // 根据文件扩展名获取对应的编码器CLSID
+    CLSID clsid;
+    wstring extension = wFilePath.substr(wFilePath.find_last_of(L".") + 1);
+    transform(extension.begin(), extension.end(), extension.begin(), ::towlower);
+
+    int findClsidResult = -1;
+    if (extension == L"png")
+    {
+        findClsidResult = GetEncoderClsid(L"image/png", &clsid);
+    }
+    else if (extension == L"jpg" || extension == L"jpeg")
+    {
+        findClsidResult = GetEncoderClsid(L"image/jpeg", &clsid);
+    }
+    else if (extension == L"bmp")
+    {
+        findClsidResult = GetEncoderClsid(L"image/bmp", &clsid);
+    }
+    else if (extension == L"gif")
+    {
+        findClsidResult = GetEncoderClsid(L"image/gif", &clsid);
+    }
+    else if (extension == L"tiff")
+    {
+        findClsidResult = GetEncoderClsid(L"image/tiff", &clsid);
+    }
+    if (findClsidResult < 0)
+    {
+        delete bitmap;  // 释放bitmap对象
+        SelectObject(memDC, oldBitmap);
+        DeleteObject(hBitmap);
+        DeleteDC(memDC);
+        ReleaseDC(nullptr, screenDC);
+
+        // 关闭GDI+
+        Gdiplus::GdiplusShutdown(gdiplusToken);
+        return false;
+    }
+
+    // 保存截图到文件
+    const Gdiplus::Status status = bitmap->Save(wFilePath.c_str(), &clsid, nullptr);
+
+    // 清理资源
+    delete bitmap;  // 释放bitmap对象
+    SelectObject(memDC, oldBitmap);
+    DeleteObject(hBitmap);
+    DeleteDC(memDC);
+    ReleaseDC(nullptr, screenDC);
+
+    // 关闭GDI+
+    Gdiplus::GdiplusShutdown(gdiplusToken);
+    return (status == Gdiplus::Status::Ok);
+}
+bool CaptureScreenToFile(const AO_MonitorInfo& monitor, const string& filePath)
+{
+    return CaptureScreenToFile(monitor.GetRect(), filePath);
+}
+
+bool CaptureScreenToClipboard(const AO_Rect& rect)
+{
+    // 初始化GDI+
+    Gdiplus::GdiplusStartupInput gdiplusStartupInput;
+    ULONG_PTR gdiplusToken;
+    Gdiplus::GdiplusStartup(&gdiplusToken, &gdiplusStartupInput, nullptr);
+
+    // 获取屏幕设备上下文
+    const HDC screenDC = GetDC(nullptr);
+    const HDC memDC = CreateCompatibleDC(screenDC);
+
+    // 创建兼容的位图
+    const HBITMAP hBitmap = CreateCompatibleBitmap(screenDC, rect.width, rect.height);
+    const HGDIOBJ oldBitmap = SelectObject(memDC, hBitmap);
+
+    // 从屏幕设备上下文中复制内容到内存设备上下文中
+    BitBlt(memDC, 0, 0, rect.width, rect.height, screenDC, rect.leftTop.x, rect.leftTop.y, SRCCOPY);
+
+    // 打开剪贴板
+    if (!OpenClipboard(nullptr))
+    {
+        SelectObject(memDC, oldBitmap);
+        DeleteObject(hBitmap);
+        DeleteDC(memDC);
+        ReleaseDC(nullptr, screenDC);
+        Gdiplus::GdiplusShutdown(gdiplusToken);
+        return false;
+    }
+
+    // 清空剪贴板
+    EmptyClipboard();
+
+    // 将位图设置到剪贴板中
+    if (SetClipboardData(CF_BITMAP, hBitmap) == nullptr)
+    {
+        CloseClipboard();
+        SelectObject(memDC, oldBitmap);
+        DeleteObject(hBitmap);
+        DeleteDC(memDC);
+        ReleaseDC(nullptr, screenDC);
+        Gdiplus::GdiplusShutdown(gdiplusToken);
+        return false;
+    }
+
+    // 关闭剪贴板
+    CloseClipboard();
+
+    // 清理资源
+    SelectObject(memDC, oldBitmap);
+    DeleteDC(memDC);
+    ReleaseDC(nullptr, screenDC);
+
+    // 此处不应删除 hBitmap，因为它已被设置到剪贴板并将由系统管理
+
+    // 关闭GDI+
+    Gdiplus::GdiplusShutdown(gdiplusToken);
+    return true;
+}
+bool CaptureScreenToClipboard(const AO_MonitorInfo& monitor)
+{
+    return CaptureScreenToClipboard(monitor.GetRect());
+}
+
+BOOL CALLBACK EnumWindowsProc(HWND hwnd, LPARAM lParam)
+{
+    auto params = reinterpret_cast<pair<vector<AO_Window>*, bool>*>(lParam);
+    vector<AO_Window>* windows = params->first;
+    const bool isStreamliningMode = params->second;
+
+    char title[256];
+    char className[256];
+
+    // 获取窗口标题
+    GetWindowTextA(hwnd, title, sizeof(title));
+
+    // 获取窗口类名
+    GetClassNameA(hwnd, className, sizeof(className));
+
+    // 获取窗口的可见性
+    const bool isVisible = (IsWindowVisible(hwnd) != 0);
+
+    // 获取窗口的最小化状态
+    const bool isMinimized = (IsIconic(hwnd) != 0);
+
+    // 获取窗口的最大化状态
+    const bool isMaximized = (IsZoomed(hwnd) != 0);
+
+    // 获取窗口的矩形区域
+    RECT rect;
+    GetWindowRect(hwnd, &rect);
+    
+    const bool isEmptyWindow = (strlen(title) == 0 || rect.right == rect.left || rect.top == rect.bottom);
+    const bool isSubWindowOrToolWindow = (GetWindow(hwnd, GW_OWNER) || (GetWindowLong(hwnd, GWL_EXSTYLE) & WS_EX_TOOLWINDOW));
+
+    if (isStreamliningMode && (isEmptyWindow || isSubWindowOrToolWindow))
+    {
+        return TRUE;  // 忽略该窗口，继续枚举下一个窗口
+    }
+
+    // 填充 AO_Window 结构体
+    AO_Window window;
+    window.hwnd = hwnd;
+    window.title = title;
+    window.className = className;
+    window.rect = AO_Rect(AO_Point(rect.left, rect.top), AO_Point(rect.right, rect.bottom));
+    window.isVisible = isVisible;
+    window.isMinimized = isMinimized;
+    window.isMaximized = isMaximized;
+
+    // 将窗口信息添加到列表中
+    windows->push_back(window);
+
+    return TRUE;
+}
+vector<AO_Window> GetAllOpenWindows(bool isStreamliningMode)
+{
+    vector<AO_Window> windows;
+    const pair<vector<AO_Window>*, bool> params = make_pair(&windows, isStreamliningMode);
+    EnumWindows(EnumWindowsProc, reinterpret_cast<LPARAM>(&params));
+    return windows;
+}
+
+vector<AO_Window> GetWindows(const string& titleSubString, bool isConsiderUpperAndLower)
+{
+    const vector<AO_Window> allWindows = GetAllOpenWindows();
+    vector<AO_Window> filteredWindows;
+    filteredWindows.reserve(allWindows.size());
+
+    string lowerSearchString = titleSubString;
+    if (!isConsiderUpperAndLower)
+    {
+        transform(lowerSearchString.begin(), lowerSearchString.end(), lowerSearchString.begin(), ::tolower);
+    }
+    for (const AO_Window& window : allWindows)
+    {
+        string lowerTitle = window.title;
+        if (!isConsiderUpperAndLower)
+        {
+            transform(lowerTitle.begin(), lowerTitle.end(), lowerTitle.begin(), ::tolower);
+        }
+        if (lowerTitle.find(lowerSearchString) != string::npos)
+        {
+            filteredWindows.push_back(window);
+        }
+    }
+    filteredWindows.shrink_to_fit();
+    return filteredWindows;
+}
+
+void SetWindowVisibility(AO_Window& window, bool isVisible)
+{
+    ShowWindow(window.hwnd, isVisible ? SW_SHOW : SW_HIDE);
+    window.isVisible = isVisible;
+}
+
+void MinimizeWindow(AO_Window& window)
+{
+    ShowWindow(window.hwnd, SW_MINIMIZE);
+    window.isMinimized = true;
+}
+
+void MaximizeWindow(AO_Window& window)
+{
+    ShowWindow(window.hwnd, SW_MAXIMIZE);
+    window.isMaximized = true;
+}
+
+void RestoreWindow(AO_Window& window)
+{
+    ShowWindow(window.hwnd, SW_RESTORE);
+    window.isMinimized = false;
+    window.isMaximized = false;
+}
+
+void MoveWindow(AO_Window& window, int newLeftTopX, int newLeftTopY)
+{
+    const int left = newLeftTopX;
+    const int top = newLeftTopY;
+    const int width = window.rect.width;
+    const int height = window.rect.height;
+    MoveWindow(window.hwnd, left, top, width, height, TRUE);
+
+    window.rect = AO_Rect(newLeftTopX, newLeftTopY, width, height);
+}
+void MoveWindow(AO_Window& window, const AO_Point& newLeftTopPoint)
+{
+    MoveWindow(window, newLeftTopPoint.x, newLeftTopPoint.y);
+}
+
+void ResizeWindow(AO_Window& window, int newWidth, int newHeight)
+{
+    const int left = window.rect.leftTop.x;
+    const int top = window.rect.leftTop.y;
+    MoveWindow(window.hwnd, left, top, newWidth, newHeight, TRUE);
+    window.rect = AO_Rect(window.rect.leftTop, newWidth, newHeight);
+}
+
+void MoveAndResizeWindow(AO_Window& window, const AO_Rect& newRect)
+{
+    const int left = newRect.leftTop.x;
+    const int top = newRect.leftTop.y;
+    const int width = newRect.width;
+    const int height = newRect.height;
+
+    MoveWindow(window.hwnd, left, top, width, height, TRUE);
+
+    window.rect = newRect;
+}
+void MoveAndResizeWindow(AO_Window& window, const AO_Point& newLeftTopPoint, const AO_Point& newRightBottomPoint)
+{
+    MoveAndResizeWindow(window, AO_Rect(newLeftTopPoint, newRightBottomPoint));
+}
+void MoveAndResizeWindow(AO_Window& window, const AO_Point& newLeftTopPoint, int newWidth, int newHeight)
+{
+    MoveAndResizeWindow(window, AO_Rect(newLeftTopPoint, newWidth, newHeight));
+}
+void MoveAndResizeWindow(AO_Window& window, int newLeftTopX, int newLeftTopY, int newWidth, int newHeight)
+{
+    MoveAndResizeWindow(window, AO_Rect(newLeftTopX, newLeftTopY, newWidth, newHeight));
+}
+
+void BringWindowToFront(AO_Window& window)
+{
+    SetForegroundWindow(window.hwnd);
+}
+
+void SendWindowToBack(AO_Window& window)
+{
+    SetWindowPos(window.hwnd, HWND_BOTTOM, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE);
+}
+
+
+
+
+
+
+
+
+
+
+
 
 

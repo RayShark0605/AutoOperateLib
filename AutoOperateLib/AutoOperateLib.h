@@ -1,15 +1,12 @@
 ﻿#pragma once
 
 #include <windows.h>
-#include <chrono>
 #include <thread>
 #include <vector>
-#include <unordered_map>
 #include <string>
-#include <sstream>
 #include <condition_variable>
 
-// 二维点
+// 二维整数点
 struct AO_Point
 {
     int x = 0;
@@ -17,6 +14,22 @@ struct AO_Point
     AO_Point();
     AO_Point(int x, int y);
     AO_Point(POINT pt);
+    POINT GetWin32Point() const;
+};
+
+// 矩形。注意，外部对成员变量的修改需要自行确保合理性
+struct AO_Rect
+{
+    AO_Point leftTop;
+    AO_Point rightBottom;
+    int width = 0;
+    int height = 0;
+    AO_Rect();
+    AO_Rect(const AO_Point& leftTop, const AO_Point& rightBottom);
+    AO_Rect(const AO_Point& leftTop, int width, int height);
+    AO_Rect(int leftTopX, int leftTopY, int width, int height);
+    AO_Rect(const RECT& rect);
+    RECT GetWin32Rect() const;
 };
 
 // 显示器信息
@@ -26,6 +39,7 @@ struct AO_MonitorInfo
     AO_Point leftTop;            // 显示器左上角的全局坐标
     int width = 0;               // 显示器分辨率宽
     int height = 0;              // 显示器分辨率高
+    AO_Rect GetRect() const;
 };
 
 // 获取显示器信息
@@ -70,7 +84,7 @@ void WaitForHour(int hours);      // 等待xx小时
 // 键鼠操作类型
 enum class AO_ActionType
 {
-    KeyDown,
+    KeyDown = 0,
     KeyUp,
     MouseMove,
     MouseLeftDown,
@@ -131,6 +145,9 @@ struct AO_ActionRecord
     double timeSinceStart; // 从录制开始的时间偏移（以毫秒为单位）
 };
 
+// 键鼠操作的导入/导出
+bool SaveRecordsToTxtFile(const std::vector<AO_ActionRecord>& records, const std::string& filePath);
+std::vector<AO_ActionRecord> LoadRecordsFromTxtFile(const std::string& filePath);
 
 // 获取当前鼠标指针的全局坐标
 AO_Point GetMousePos();
@@ -267,16 +284,79 @@ public:
 
 private:
     std::vector<AO_ActionRecord> records;
-    bool isRunning;
-    bool isPaused;
+    bool isRunning = false;
+    bool isPaused = false;
     std::thread simulationThread;
-    std::condition_variable cv;
+    std::condition_variable conditionVariable;
     std::mutex mtx;
 
     void SimulateActions();
     void PerformAction(const AO_ActionRecord& record);
 };
 
+// 将字符串添加到Windows剪切板
+bool CopyTextToClipboard(const std::string& text);
 
+// 将剪切板内容粘贴出来，本质上是执行Ctrl+V组合键
+void PasteTextFromClipboard();
 
+// 获取剪切板中的字符串。注意，如果剪切板中的内容不是文本内容，将返回false
+bool GetClipboardContents(std::string& text);
+
+// 在屏幕指定区域截图并保存为文件。图像编码格式将通过filePath文件后缀名自动判断。如果是不支持的图像编码格式或保存路径不存在将返回false。
+bool CaptureScreenToFile(const AO_Rect& rect, const std::string& filePath);
+bool CaptureScreenToFile(const AO_MonitorInfo& monitor, const std::string& filePath); // 截取某个显示器的全部内容
+
+// 在屏幕指定区域截图并保存到剪切板
+bool CaptureScreenToClipboard(const AO_Rect& rect);
+bool CaptureScreenToClipboard(const AO_MonitorInfo& monitor); // 截取某个显示器的全部内容
+
+// 窗口
+struct AO_Window
+{
+    HWND hwnd = nullptr;          // 句柄
+    std::string title = "";       // 标题
+    std::string className = "";   // 类名
+    AO_Rect rect;                 // 位置和大小
+    bool isVisible = true;        // 是否可见
+    bool isMinimized = false;     // 是否最小化
+    bool isMaximized = false;     // 是否最大化
+};
+
+// 获取当前所有窗口。isStreamliningMode为true时，将忽略工具窗口、无标题窗口、大小为0的窗口等。
+std::vector<AO_Window> GetAllOpenWindows(bool isStreamliningMode = true);
+
+// 获取所有标题包含传入字符串的窗口。isConsiderUpperAndLower为false时，将不考虑字符串的大小写差异。
+std::vector<AO_Window> GetWindows(const std::string& titleSubString, bool isConsiderUpperAndLower = false);
+
+// 设置窗口可见性
+void SetWindowVisibility(AO_Window& window, bool isVisible);
+
+// 最小化窗口
+void MinimizeWindow(AO_Window& window);
+
+// 最大化窗口
+void MaximizeWindow(AO_Window& window);
+
+// 恢复窗口（从最小化或最大化状态恢复）
+void RestoreWindow(AO_Window& window);
+
+// 移动窗口
+void MoveWindow(AO_Window& window, int newLeftTopX, int newLeftTopY);
+void MoveWindow(AO_Window& window, const AO_Point& newLeftTopPoint);
+
+// 改变窗口大小
+void ResizeWindow(AO_Window& window, int newWidth, int newHeight);
+
+// 移动并改变窗口大小。如果将窗口大小设置为与屏幕分辨率相同（或更大），那么窗口可能不会移动！
+void MoveAndResizeWindow(AO_Window& window, const AO_Rect& newRect);
+void MoveAndResizeWindow(AO_Window& window, const AO_Point& newLeftTopPoint, const AO_Point& newRightBottomPoint);
+void MoveAndResizeWindow(AO_Window& window, const AO_Point& newLeftTopPoint, int newWidth, int newHeight);
+void MoveAndResizeWindow(AO_Window& window, int newLeftTopX, int newLeftTopY, int newWidth, int newHeight);
+
+// 窗口置顶（窗口置为前台）
+void BringWindowToFront(AO_Window& window);
+
+// 窗口置于后台，使其不再是活动窗口
+void SendWindowToBack(AO_Window& window);
 

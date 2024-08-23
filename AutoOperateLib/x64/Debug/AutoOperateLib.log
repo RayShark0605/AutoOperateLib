@@ -1,2 +1,4 @@
 ﻿  AutoOperateLib.cpp
+C:\Users\localuser\Desktop\AutoOperateLib\AutoOperateLib\AutoOperateLib.cpp(797,42): warning C4244: “参数”: 从“const DWORD”转换到“BYTE”，可能丢失数据
+C:\Users\localuser\Desktop\AutoOperateLib\AutoOperateLib\AutoOperateLib.cpp(800,40): warning C4244: “参数”: 从“const DWORD”转换到“BYTE”，可能丢失数据
   AutoOperateLib.vcxproj -> C:\Users\localuser\Desktop\AutoOperateLib\x64\Debug\AutoOperateLib.lib
