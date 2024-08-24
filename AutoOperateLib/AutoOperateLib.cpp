@@ -139,12 +139,23 @@ AO_Timer::AO_Timer() : isRunning(false), isPaused(false), pausedDuration(0)
 {
     QueryPerformanceFrequency(&frequency);
 }
+AO_Timer::~AO_Timer()
+{
+    stopCallbackChecker = true;
+    Stop();
+}
 void AO_Timer::Start()
 {
     QueryPerformanceCounter(&startTime);
     isRunning = true;
     isPaused = false;
     pausedDuration = 0;
+
+    if (userCallback)
+    {
+        stopCallbackChecker = false;
+        callbackThread = thread(&AO_Timer::CallbackChecker, this);
+    }
 }
 void AO_Timer::Stop()
 {
@@ -154,6 +165,12 @@ void AO_Timer::Stop()
         QueryPerformanceCounter(&currentTime);
         pausedDuration += (currentTime.QuadPart - startTime.QuadPart);
         isRunning = false;
+
+        stopCallbackChecker = true;
+        if (callbackThread.joinable())
+        {
+            callbackThread.join();
+        }
     }
 }
 void AO_Timer::Pause()
@@ -162,6 +179,12 @@ void AO_Timer::Pause()
     {
         QueryPerformanceCounter(&pauseTime);
         isPaused = true;
+
+        stopCallbackChecker = true;
+        if (callbackThread.joinable())
+        {
+            callbackThread.join();
+        }
     }
 }
 void AO_Timer::Resume()
@@ -172,17 +195,22 @@ void AO_Timer::Resume()
         QueryPerformanceCounter(&resumeTime);
         startTime.QuadPart += (resumeTime.QuadPart - pauseTime.QuadPart);
         isPaused = false;
+
+        if (userCallback)
+        {
+            stopCallbackChecker = false;
+            callbackThread = thread(&AO_Timer::CallbackChecker, this);
+        }
     }
 }
 void AO_Timer::Restart()
 {
-    QueryPerformanceCounter(&startTime);
-    isRunning = true;
-    isPaused = false;
-    pausedDuration = 0;
+    Stop();
+    Start();
 }
 void AO_Timer::Reset()
 {
+    Stop();
     isRunning = false;
     isPaused = false;
     pausedDuration = 0;
@@ -208,6 +236,41 @@ double AO_Timer::ElapsedSeconds() const
 double AO_Timer::ElapsedMinutes() const
 {
     return ElapsedMilliseconds() / 60000;
+}
+void AO_Timer::SetCallback(double intervalMilliseconds, CallbackFunction callback, bool isAsynCallback)
+{
+    userCallback = callback;
+    callbackIntervalMilliseconds = intervalMilliseconds;
+    this->isAsynCallback = isAsynCallback;
+}
+void AO_Timer::CallbackChecker()
+{
+    double startTime = ElapsedMilliseconds();
+    double callbackTime = startTime + callbackIntervalMilliseconds;
+    while (!stopCallbackChecker)
+    {
+        if (!isPaused && !stopCallbackChecker && userCallback)
+        {
+            while (!stopCallbackChecker && ElapsedMilliseconds() < callbackTime)
+            {
+
+            }
+            if (!stopCallbackChecker)
+            {
+                if (isAsynCallback)
+                {
+                    thread t([&]() {userCallback(); });
+                    t.detach();
+                }
+                else
+                {
+                    userCallback();
+                }
+            }
+            startTime = ElapsedMilliseconds();
+            callbackTime = startTime + callbackIntervalMilliseconds;
+        }
+    }
 }
 
 string GetCurrentTimeAsString()
@@ -643,6 +706,153 @@ bool IsCapsLockOn()
 {
     SHORT capsLockState = GetKeyState(VK_CAPITAL);
     return (capsLockState & 0x0001) != 0;
+}
+
+AO_ActionTrigger* AO_ActionTrigger::instance = nullptr;
+AO_ActionTrigger::AO_ActionTrigger()
+{
+    isRunning = true;
+    instance = this;
+
+    hookThread = thread(&AO_ActionTrigger::MessageLoop, this);
+    SetThreadPriority(hookThread.native_handle(), THREAD_PRIORITY_HIGHEST);
+    
+    timer.Start();
+}
+AO_ActionTrigger::~AO_ActionTrigger()
+{
+    timer.Stop();
+
+    isRunning = false;
+    if (hookThread.joinable())
+    {
+        hookThread.join(); // 等待消息循环线程结束
+    }
+}
+void AO_ActionTrigger::RegisterCallback(AO_ActionType actionType, Callback callback)
+{
+    const double timeSinceStart = timer.ElapsedMilliseconds();
+    callbacks[actionType] = callback;
+    startTimes[actionType] = timeSinceStart;
+}
+LRESULT CALLBACK AO_ActionTrigger::KeyboardProc(int nCode, WPARAM wParam, LPARAM lParam)
+{
+    const double timeSinceStart = instance->timer.ElapsedMilliseconds();
+    if (nCode == HC_ACTION)
+    {
+        const KBDLLHOOKSTRUCT* pKeyboard = reinterpret_cast<KBDLLHOOKSTRUCT*>(lParam);
+
+        AO_ActionType actionType;
+        if (wParam == WM_KEYDOWN || wParam == WM_SYSKEYDOWN)
+        {
+            actionType = AO_ActionType::KeyDown;
+        }
+        else if (wParam == WM_KEYUP || wParam == WM_SYSKEYUP)
+        {
+            actionType = AO_ActionType::KeyUp;
+        }
+        else
+        {
+            return CallNextHookEx(nullptr, nCode, wParam, lParam);
+        }
+
+        AO_ActionRecord record;
+        record.actionType = actionType;
+        record.data.keyboard.vkCode = pKeyboard->vkCode;
+        if (instance->startTimes.find(actionType) != instance->startTimes.end())
+        {
+            record.timeSinceStart = timeSinceStart - instance->startTimes.at(actionType);
+        }
+        instance->TriggerCallback(record);
+    }
+    return CallNextHookEx(nullptr, nCode, wParam, lParam);
+}
+LRESULT CALLBACK AO_ActionTrigger::MouseProc(int nCode, WPARAM wParam, LPARAM lParam)
+{
+    const double timeSinceStart = instance->timer.ElapsedMilliseconds();
+    if (nCode == HC_ACTION)
+    {
+        MSLLHOOKSTRUCT* pMouse = reinterpret_cast<MSLLHOOKSTRUCT*>(lParam);
+        AO_ActionType actionType;
+
+        switch (wParam)
+        {
+        case WM_MOUSEMOVE:
+            actionType = AO_ActionType::MouseMove;
+            break;
+        case WM_LBUTTONDOWN:
+            actionType = AO_ActionType::MouseLeftDown;
+            break;
+        case WM_LBUTTONUP:
+            actionType = AO_ActionType::MouseLeftUp;
+            break;
+        case WM_RBUTTONDOWN:
+            actionType = AO_ActionType::MouseRightDown;
+            break;
+        case WM_RBUTTONUP:
+            actionType = AO_ActionType::MouseRightUp;
+            break;
+        case WM_MBUTTONDOWN:
+            actionType = AO_ActionType::MouseMiddleDown;
+            break;
+        case WM_MBUTTONUP:
+            actionType = AO_ActionType::MouseMiddleUp;
+            break;
+        case WM_MOUSEWHEEL:
+            actionType = AO_ActionType::MouseWheel;
+            break;
+        default:
+            return CallNextHookEx(nullptr, nCode, wParam, lParam);
+        }
+
+        AO_ActionRecord record;
+        record.actionType = actionType;
+        record.data.mouseMove.position = AO_Point(pMouse->pt.x, pMouse->pt.y);
+        if (instance->startTimes.find(actionType) != instance->startTimes.end())
+        {
+            record.timeSinceStart = timeSinceStart - instance->startTimes.at(actionType);
+        }
+        if (actionType == AO_ActionType::MouseWheel)
+        {
+            record.data.mouseWheel.delta = GET_WHEEL_DELTA_WPARAM(pMouse->mouseData);
+        }
+        instance->TriggerCallback(record);
+    }
+    return CallNextHookEx(nullptr, nCode, wParam, lParam);
+}
+void AO_ActionTrigger::TriggerCallback(const AO_ActionRecord& record) const
+{
+    const auto it = callbacks.find(record.actionType);
+    if (it != callbacks.end())
+    {
+        it->second(record);
+    }
+}
+void AO_ActionTrigger::MessageLoop()
+{
+    keyboardHook = SetWindowsHookEx(WH_KEYBOARD_LL, KeyboardProc, nullptr, 0);
+    if (!keyboardHook)
+    {
+        return;
+    }
+    mouseHook = SetWindowsHookEx(WH_MOUSE_LL, MouseProc, nullptr, 0);
+    if (!mouseHook)
+    {
+        UnhookWindowsHookEx(keyboardHook);
+        return;
+    }
+    MSG msg;
+    while (isRunning)
+    {
+        while (PeekMessage(&msg, nullptr, 0, 0, PM_REMOVE))
+        {
+            TranslateMessage(&msg);
+            DispatchMessage(&msg);
+        }
+    }
+    // 清理钩子
+    UnhookWindowsHookEx(keyboardHook);
+    UnhookWindowsHookEx(mouseHook);
 }
 
 AO_ActionRecorder* AO_ActionRecorder::instance = nullptr;
@@ -1316,16 +1526,3 @@ void SendWindowToBack(AO_Window& window)
 {
     SetWindowPos(window.hwnd, HWND_BOTTOM, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE);
 }
-
-
-
-
-
-
-
-
-
-
-
-
-

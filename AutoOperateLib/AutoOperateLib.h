@@ -5,7 +5,6 @@
 #include <vector>
 #include <string>
 #include <condition_variable>
-#include <atomic>
 #include <functional>
 #include <unordered_map>
 
@@ -53,6 +52,7 @@ class AO_Timer
 {
 public:
     AO_Timer();
+    ~AO_Timer();
     void Start();    // 开始
     void Stop();     // 停止，不清除已经记录的数据
     void Pause();    // 暂停
@@ -63,13 +63,26 @@ public:
     double ElapsedSeconds() const;
     double ElapsedMinutes() const;
 
+    using CallbackFunction = std::function<void()>;
+
+    // 设置回调函数，每隔intervalMilliseconds毫秒调用一次回调函数。当isAsynCallback为true时进行异步回调，为false时进行同步回调
+    void SetCallback(double intervalMilliseconds, CallbackFunction callback, bool isAsynCallback = true);
+
 private:
-    bool isRunning = false;   // 当前是否处于运行状态
-    bool isPaused = false;    // 当前是否处于暂停状态
+    bool isRunning = false;      // 当前是否处于运行状态
+    bool isPaused = false;       // 当前是否处于暂停状态
+    bool isAsynCallback = true;  // 是否为异步回调
     LARGE_INTEGER startTime;
     LARGE_INTEGER pauseTime;
     LARGE_INTEGER frequency;  // 基于CPU支持的高精度时间戳计数器频率
     long long pausedDuration;
+
+    CallbackFunction userCallback = nullptr;
+    double callbackIntervalMilliseconds = 0;
+    std::atomic<bool> stopCallbackChecker = false;
+    std::thread callbackThread;
+
+    void CallbackChecker();
 };
 
 // 获取当前系统时间并输出为字符串。字符串格式为“2024-08-16_11-08-20-256”格式
@@ -279,7 +292,47 @@ void KeyboardClick(BYTE key, int timeIntervalMS = 100);
 // 检测当前是否是大写锁定状态
 bool IsCapsLockOn();
 
-// 键鼠操作录制器
+// 键鼠事件触发器
+// 使用案例：当检测到键盘按下或鼠标移动时，触发相应操作
+//  AO_ActionTrigger trigger;
+//  trigger.RegisterCallback(AO_ActionType::KeyDown, [](const AO_ActionRecord& record)
+//      {
+//          std::cout << "[ " << record.timeSinceStart << "ms] Key Down: " << record.data.keyboard.vkCode << std::endl;
+//      });
+//  trigger.RegisterCallback(AO_ActionType::MouseMove, [](const AO_ActionRecord& record)
+//      {
+//          std::cout << "[ " << record.timeSinceStart << "ms] Mouse Move: (" << record.data.mouseMove.position.x << ", " << record.data.mouseMove.position.y << ")" << std::endl;
+//      });
+//  WaitForS(60);
+class AO_ActionTrigger
+{
+public:
+    AO_ActionTrigger();
+    ~AO_ActionTrigger();
+
+    using Callback = std::function<void(const AO_ActionRecord&)>;
+
+    // 为某一种键鼠事件类型指定一个回调函数
+    // 注意：回调函数传入参数AO_ActionRecord中的timeSinceStart表示从“该事件类型被注册的时候”到“当前时刻（该事件类型被触发的时候）”之间的毫秒数
+    void RegisterCallback(AO_ActionType actionType, Callback callback);
+
+private:
+    HHOOK keyboardHook;
+    HHOOK mouseHook;
+    AO_Timer timer;
+    std::thread hookThread;
+    bool isRunning = false;
+    static AO_ActionTrigger* instance;
+    std::unordered_map<AO_ActionType, Callback> callbacks;
+    std::unordered_map<AO_ActionType, double> startTimes;
+
+    static LRESULT CALLBACK KeyboardProc(int nCode, WPARAM wParam, LPARAM lParam);
+    static LRESULT CALLBACK MouseProc(int nCode, WPARAM wParam, LPARAM lParam);
+    void TriggerCallback(const AO_ActionRecord& record) const;
+    void MessageLoop();
+};
+
+// 键鼠操作录制器：录制并记录人工的键鼠操作
 class AO_ActionRecorder
 {
 public:
@@ -306,7 +359,7 @@ private:
     bool isStopMessageLoop = false;   // 控制消息循环的停止
 };
 
-// 键鼠操作模拟器
+// 键鼠操作模拟器：自动执行键鼠操作
 class AO_ActionSimulator
 {
 public:
@@ -346,7 +399,7 @@ bool CaptureScreenToFile(const AO_MonitorInfo& monitor, const std::string& fileP
 bool CaptureScreenToClipboard(const AO_Rect& rect);
 bool CaptureScreenToClipboard(const AO_MonitorInfo& monitor); // 截取某个显示器的全部内容
 
-// 窗口
+// 窗口信息
 struct AO_Window
 {
     HWND hwnd = nullptr;          // 句柄
@@ -394,4 +447,19 @@ void BringWindowToFront(AO_Window& window);
 
 // 窗口置于后台，使其不再是活动窗口
 void SendWindowToBack(AO_Window& window);
+
+// 进程占用内存信息
+struct AO_ProcessMemoryInfo
+{
+    ULONGLONG pagefileUsage;        // 内存提交大小（在虚拟内存中的使用量）
+    ULONGLONG workingSetSize;       // 在物理内存中实际占用的内存量
+    ULONGLONG quotaPagedPoolUsage;  // 当前分页池配额使用量
+};
+
+// 进程信息
+struct AO_Process
+{
+    DWORD ID;
+
+};
 
