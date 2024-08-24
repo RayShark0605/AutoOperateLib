@@ -255,6 +255,74 @@ void WaitForHour(int hours)
     this_thread::sleep_for(chrono::hours(hours));
 }
 
+AO_HotkeyManager::AO_HotkeyManager()
+{
+    isRunning = true;
+    processThread = thread([this](){ this->MessageLoop(); });
+}
+AO_HotkeyManager::~AO_HotkeyManager()
+{
+    isRunning = false;
+    if (processThread.joinable())
+    {
+        PostThreadMessage(GetThreadId(processThread.native_handle()), WM_QUIT, 0, 0);
+        processThread.join();
+    }
+}
+void AO_HotkeyManager::RegisterHotkey(int id, UINT modifiers, UINT vk, HotkeyCallback callback)
+{
+    lock_guard<mutex> lock(mtx);
+    hotkeys[id] = { modifiers, vk };
+    callbacks[id] = callback;
+}
+void AO_HotkeyManager::UnregisterHotkey(int id)
+{
+    lock_guard<mutex> lock(mtx);
+    hotkeys.erase(id);
+    callbacks.erase(id);
+}
+void AO_HotkeyManager::MessageLoop()
+{
+    // 必须确保 RegisterHotKey 和 GetMessage 事件循环在同一个线程
+    while (isRunning)
+    {
+        {
+            lock_guard<mutex> lock(mtx);
+            for (const auto& pair : hotkeys)
+            {
+                RegisterHotKey(nullptr, pair.first, pair.second.first, pair.second.second);
+            }
+        }
+        
+        MSG msg;
+        while (GetMessage(&msg, NULL, 0, 0))
+        {
+            if (msg.message == WM_HOTKEY && callbacks.find(msg.wParam) != callbacks.end())
+            {
+                callbacks[msg.wParam]();
+            }
+            else if (msg.message == WM_QUIT)
+            {
+                break;
+            }
+            else
+            {
+                TranslateMessage(&msg);
+                DispatchMessage(&msg);
+            }
+        }
+        {
+            lock_guard<mutex> lock(mtx);
+            for (const auto& pair : hotkeys)
+            {
+                UnregisterHotKey(nullptr, pair.first);
+            }
+        }
+        
+        WaitForMS(500);
+    }
+}
+
 bool SaveRecordsToTxtFile(const vector<AO_ActionRecord>& records, const string& filePath)
 {
     ofstream outFile(filePath);

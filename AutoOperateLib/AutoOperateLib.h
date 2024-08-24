@@ -5,6 +5,9 @@
 #include <vector>
 #include <string>
 #include <condition_variable>
+#include <atomic>
+#include <functional>
+#include <unordered_map>
 
 // 二维整数点
 struct AO_Point
@@ -80,6 +83,61 @@ void WaitForMS(int milliseconds); // 等待xx毫秒
 void WaitForS(int seconds);       // 等待xx秒
 void WaitForMin(int minutes);     // 等待xx分钟
 void WaitForHour(int hours);      // 等待xx小时
+
+// 常用修饰键，更多修饰键参考https://learn.microsoft.com/zh-cn/windows/win32/inputdev/virtual-key-codes
+enum AO_ModifierKey : BYTE
+{
+    BACK = VK_BACK,             // 退格键
+    TAB = VK_TAB,               // Tab键
+    RETURN = VK_RETURN,         // 回车键
+    LEFTSHIFT = VK_LSHIFT,      // 左Shift键
+    RIGHTSHIFT = VK_RSHIFT,     // 右Shift键
+    LEFTCTRL = VK_LCONTROL,     // 左Ctrl键
+    RIGHTCTRL = VK_RCONTROL,    // 右Ctrl键
+    CAPITAL = VK_CAPITAL,       // Caps Lock键
+    ESC = VK_ESCAPE,            // Esc键
+    SPACE = VK_SPACE,           // 空格键
+    UP = VK_UP,                 // 方向上键
+    DOWN = VK_DOWN,             // 方向下键
+    LEFT = VK_LEFT,             // 方向左键
+    RIGHT = VK_RIGHT,           // 方向右键
+    DELE = VK_DELETE,           // Delete键
+    INSERT = VK_INSERT,         // Insert键
+    LEFTWIN = VK_LWIN,          // 左Windows键
+    RIGHTWIN = VK_RWIN,         // 右Windows键
+};
+
+// 快捷键（热键）管理器
+// 使用示例：添加Ctrl+Shift+Q快捷键，弹出一个窗口
+//  AO_HotkeyManager s;
+//  s.RegisterHotkey(1, MOD_CONTROL | MOD_SHIFT, 'Q', []() {
+//      MessageBox(nullptr, L"Ctrl+Shift+Q pressed!", L"Hotkey Triggered", MB_OK);
+//      });
+//  
+//  WaitForS(5);
+//  s.UnregisterHotkey(1);
+class AO_HotkeyManager
+{
+public:
+    using HotkeyCallback = std::function<void()>;
+
+    AO_HotkeyManager();
+    ~AO_HotkeyManager();
+
+    // 注册快捷键，id为用户指定的快捷键编号，modifiers可以为MOD_ALT、MOD_CONTROL和MOD_SHIFT
+    // vk 如果是字母的话要大写！功能键例如 F1 的 vk 是VK_F1！
+    void RegisterHotkey(int id, UINT modifiers, UINT vk, HotkeyCallback callback);
+    void UnregisterHotkey(int id);
+
+private:
+    std::unordered_map<int, std::pair<UINT, UINT>> hotkeys;
+    std::unordered_map<int, HotkeyCallback> callbacks;
+    std::mutex mtx;
+    bool isRunning = false;
+    std::thread processThread;
+    void MessageLoop();
+};
+
 
 // 键鼠操作类型
 enum class AO_ActionType
@@ -208,29 +266,6 @@ void MouseMiddleClick(const AO_Point& point, int timeIntervalMS = 100);
 void MouseWheel(int delta);
 void MouseWheel(int x, int y, int delta, int timeIntervalMS = 100);   // 将鼠标指针移动到(x, y)处再滚动滚轮
 void MouseWheel(const AO_Point& point, int delta, int timeIntervalMS = 100);
-
-// 常用修饰键，更多修饰键参考https://learn.microsoft.com/zh-cn/windows/win32/inputdev/virtual-key-codes
-enum AO_ModifierKey : BYTE
-{
-    BACK        = VK_BACK,      // 退格键
-    TAB         = VK_TAB,       // Tab键
-    RETURN      = VK_RETURN,    // 回车键
-    LEFTSHIFT   = VK_LSHIFT,    // 左Shift键
-    RIGHTSHIFT  = VK_RSHIFT,    // 右Shift键
-    LEFTCTRL    = VK_LCONTROL,  // 左Ctrl键
-    RIGHTCTRL   = VK_RCONTROL,  // 右Ctrl键
-    CAPITAL     = VK_CAPITAL,   // Caps Lock键
-    ESC         = VK_ESCAPE,    // Esc键
-    SPACE       = VK_SPACE,     // 空格键
-    UP          = VK_UP,        // 方向上键
-    DOWN        = VK_DOWN,      // 方向下键
-    LEFT        = VK_LEFT,      // 方向左键
-    RIGHT       = VK_RIGHT,     // 方向右键
-    DELE        = VK_DELETE,    // Delete键
-    INSERT      = VK_INSERT,    // Insert键
-    LEFTWIN     = VK_LWIN,      // 左Windows键
-    RIGHTWIN    = VK_RWIN,      // 右Windows键
-};
 
 // 按下键盘按键
 void KeyboardDown(BYTE key);
