@@ -5,8 +5,24 @@
 #include <algorithm>
 #include <fstream>
 #include <gdiplus.h>
+#include <psapi.h>
+#include <filesystem>
 
 using namespace std;
+
+string StringReplace(const string& path, char oldChar, char newChar)
+{
+    string result = path;
+    for (size_t i = 0; i < result.size(); i++)
+    {
+        if (result[i] == oldChar)
+        {
+            result[i] = newChar;
+        }
+    }
+
+    return result;
+}
 
 AO_Point::AO_Point()
 {
@@ -1519,10 +1535,370 @@ void MoveAndResizeWindow(AO_Window& window, int newLeftTopX, int newLeftTopY, in
 
 void BringWindowToFront(AO_Window& window)
 {
+    BringWindowToTop(window.hwnd);
     SetForegroundWindow(window.hwnd);
+    DWORD currentThreadId = GetCurrentThreadId();
+    DWORD foregroundThreadId = GetWindowThreadProcessId(GetForegroundWindow(), NULL);
+
+    // 如果当前线程和前台窗口线程不同，则附加到前台窗口线程
+    if (currentThreadId != foregroundThreadId)
+    {
+        AttachThreadInput(currentThreadId, foregroundThreadId, TRUE);
+        SetForegroundWindow(window.hwnd);
+        AttachThreadInput(currentThreadId, foregroundThreadId, FALSE);
+    }
+    else
+    {
+        SetForegroundWindow(window.hwnd);
+    }
+
+    // 如果窗口处于最小化状态，则先恢复它
+    if (IsIconic(window.hwnd))
+    {
+        ShowWindow(window.hwnd, SW_RESTORE);
+    }
+
+    // 确保窗口可见并处于前台
+    ShowWindow(window.hwnd, SW_SHOW);
+    SetWindowPos(window.hwnd, HWND_TOP, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE);
 }
 
 void SendWindowToBack(AO_Window& window)
 {
     SetWindowPos(window.hwnd, HWND_BOTTOM, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE);
+}
+
+string GetCurrentProcessName()
+{
+    wchar_t exePath[MAX_PATH];
+    const DWORD size = GetModuleFileNameW(NULL, exePath, MAX_PATH);
+    if (size == 0)
+    {
+        return "";
+    }
+
+    const int bufferSize = WideCharToMultiByte(CP_UTF8, 0, exePath, -1, NULL, 0, NULL, NULL);
+    if (bufferSize == 0)
+    {
+        return "";
+    }
+
+    string exeName(bufferSize, 0);
+    WideCharToMultiByte(CP_UTF8, 0, exePath, -1, &exeName[0], bufferSize, NULL, NULL);
+    exeName = exeName.substr(exeName.find_last_of("\\/") + 1);
+    return exeName;
+}
+
+string GetCurrentProcessPath()
+{
+    wchar_t exePath[MAX_PATH];
+    DWORD size = GetModuleFileNameW(NULL, exePath, MAX_PATH);
+
+    if (size == 0)
+    {
+        return "";
+    }
+
+    int bufferSize = WideCharToMultiByte(CP_UTF8, 0, exePath, -1, NULL, 0, NULL, NULL);
+    if (bufferSize == 0)
+    {
+        return "";
+    }
+
+    string fullPath(bufferSize, 0);
+    WideCharToMultiByte(CP_UTF8, 0, exePath, -1, &fullPath[0], bufferSize, NULL, NULL);
+    fullPath = StringReplace(fullPath, '\\', '/');
+    return fullPath;
+}
+
+vector<AO_Process> GetProcessesInfo()
+{
+    vector<AO_Process> processes;
+
+    // 获取进程ID列表
+    DWORD processIDs[1024], cbNeeded;
+    if (!EnumProcesses(processIDs, sizeof(processIDs), &cbNeeded))
+    {
+        return processes;
+    }
+
+    const DWORD processCount = cbNeeded / sizeof(DWORD);
+
+    for (DWORD i = 0; i < processCount; i++)
+    {
+        DWORD processID = processIDs[i];
+        if (processID == 0)
+        {
+            continue;
+        }
+
+        // 打开进程
+        HANDLE hProcess = OpenProcess(PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, FALSE, processID);
+        if (!hProcess)
+        {
+            continue;
+        }
+
+        AO_Process process;
+        process.ID = processID;
+
+        // 获取进程名称
+        char processName[MAX_PATH] = "<unknown>";
+        if (GetModuleBaseNameA(hProcess, NULL, processName, sizeof(processName) / sizeof(char)))
+        {
+            process.processName = processName;
+        }
+
+        // 获取进程路径
+        char processPath[MAX_PATH] = "<unknown>";
+        if (GetModuleFileNameExA(hProcess, NULL, processPath, sizeof(processPath) / sizeof(char)))
+        {
+            process.processPath = processPath;
+        }
+
+        // 获取进程内存信息
+        PROCESS_MEMORY_COUNTERS_EX pmc;
+        if (GetProcessMemoryInfo(hProcess, (PROCESS_MEMORY_COUNTERS*)&pmc, sizeof(pmc)))
+        {
+            process.memoryInfo.pagefileUsage = pmc.PagefileUsage;
+            process.memoryInfo.workingSetSize = pmc.WorkingSetSize;
+            process.memoryInfo.quotaPagedPoolUsage = pmc.QuotaPagedPoolUsage;
+        }
+
+        processes.push_back(process);
+
+        // 关闭进程句柄
+        CloseHandle(hProcess);
+    }
+
+    return processes;
+}
+
+vector<AO_Process> GetProcesses(const string& nameSubString, bool isConsiderUpperAndLower)
+{
+    string lowerFilter = nameSubString;
+    if (!isConsiderUpperAndLower)
+    {
+        transform(lowerFilter.begin(), lowerFilter.end(), lowerFilter.begin(), ::tolower);
+    }
+    DWORD processIDs[1024], cbNeeded;
+    if (!EnumProcesses(processIDs, sizeof(processIDs), &cbNeeded))
+    {
+        return {};
+    }
+    vector<AO_Process> processes;
+    const DWORD processCount = cbNeeded / sizeof(DWORD);
+    for (DWORD i = 0; i < processCount; i++)
+    {
+        const DWORD processID = processIDs[i];
+        if (processID == 0)
+        {
+            continue;
+        }
+
+        // 打开进程
+        HANDLE hProcess = OpenProcess(PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, FALSE, processID);
+
+        if (!hProcess)
+        {
+            continue;
+        }
+
+        AO_Process process;
+        process.ID = processID;
+
+        // 获取进程名称
+        char processName[MAX_PATH] = "<unknown>";
+        if (GetModuleBaseNameA(hProcess, NULL, processName, sizeof(processName) / sizeof(char)))
+        {
+            process.processName = processName;
+        }
+
+        // 将进程名称转换为小写
+        string lowerProcessName = process.processName;
+        if (!isConsiderUpperAndLower)
+        {
+            transform(lowerProcessName.begin(), lowerProcessName.end(), lowerProcessName.begin(), ::tolower);
+        }
+
+        // 检查进程名称是否包含过滤字符串
+        if (lowerProcessName.find(lowerFilter) == string::npos)
+        {
+            CloseHandle(hProcess);
+            continue;  // 如果不包含过滤字符串，则跳过该进程
+        }
+
+        // 获取进程路径
+        char processPath[MAX_PATH] = "<unknown>";
+        if (GetModuleFileNameExA(hProcess, NULL, processPath, sizeof(processPath) / sizeof(char)))
+        {
+            process.processPath = processPath;
+        }
+
+        // 获取进程内存信息
+        PROCESS_MEMORY_COUNTERS_EX pmc;
+        if (GetProcessMemoryInfo(hProcess, (PROCESS_MEMORY_COUNTERS*)&pmc, sizeof(pmc)))
+        {
+            process.memoryInfo.pagefileUsage = pmc.PagefileUsage;
+            process.memoryInfo.workingSetSize = pmc.WorkingSetSize;
+            process.memoryInfo.quotaPagedPoolUsage = pmc.QuotaPagedPoolUsage;
+        }
+
+        processes.push_back(process);
+
+        // 关闭进程句柄
+        CloseHandle(hProcess);
+    }
+
+    return processes;
+}
+
+struct EnumWindowsData
+{
+    DWORD processId;
+    vector<AO_Window> windows;
+    bool isStreamliningMode;
+};
+BOOL CALLBACK EnumWindowsProc2(HWND hwnd, LPARAM lParam)
+{
+    EnumWindowsData* data = reinterpret_cast<EnumWindowsData*>(lParam);
+
+    DWORD windowProcessId;
+    GetWindowThreadProcessId(hwnd, &windowProcessId);
+
+    if (windowProcessId == data->processId)
+    {
+        AO_Window window;
+        window.hwnd = hwnd;
+
+        // 获取窗口标题
+        char title[256];
+        GetWindowTextA(hwnd, title, sizeof(title));
+        window.title = title;
+
+        // 获取窗口类名
+        char className[256];
+        GetClassNameA(hwnd, className, sizeof(className));
+        window.className = className;
+
+        // 获取窗口矩形
+        RECT rect;
+        GetWindowRect(hwnd, &rect);
+        window.rect = { rect.left, rect.top, rect.right, rect.bottom };
+
+        // 判断窗口是否可见、最小化、最大化
+        window.isVisible = IsWindowVisible(hwnd) != FALSE;
+        window.isMinimized = IsIconic(hwnd) != FALSE;
+        window.isMaximized = IsZoomed(hwnd) != FALSE;
+
+        const bool isEmptyWindow = (strlen(title) == 0 || rect.right == rect.left || rect.top == rect.bottom);
+        const bool isSubWindowOrToolWindow = (GetWindow(hwnd, GW_OWNER) || (GetWindowLong(hwnd, GWL_EXSTYLE) & WS_EX_TOOLWINDOW));
+        if (data->isStreamliningMode && (isEmptyWindow || isSubWindowOrToolWindow))
+        {
+            return TRUE;  // 忽略该窗口，继续枚举下一个窗口
+        }
+
+        // 将窗口信息添加到列表中
+        data->windows.push_back(window);
+    }
+
+    return TRUE; // 继续枚举窗口
+}
+vector<AO_Window> GetProcessWindows(const string& nameSubString, bool isConsiderUpperAndLower, bool isStreamliningMode)
+{
+    vector<AO_Window> results;
+    const vector<AO_Process> processes = GetProcesses(nameSubString, isConsiderUpperAndLower);
+    for (const AO_Process& process : processes)
+    {
+        EnumWindowsData data;
+        data.processId = process.ID;
+        data.isStreamliningMode = isStreamliningMode;
+        EnumWindows(EnumWindowsProc2, reinterpret_cast<LPARAM>(&data));
+        results.insert(results.end(), data.windows.begin(), data.windows.end());
+    }
+    return results;
+}
+
+bool StartProcess(const string& applicationPath, const string& commandLineArgs, const string& workingDirectory, bool isAsynStart)
+{
+    // 初始化启动信息结构体
+    STARTUPINFOA si;
+    PROCESS_INFORMATION pi;
+
+    ZeroMemory(&si, sizeof(si));
+    si.cb = sizeof(si);
+    ZeroMemory(&pi, sizeof(pi));
+
+    // 将应用程序路径和参数组合成完整的命令行
+    string commandLine = applicationPath;
+    if (!commandLineArgs.empty()) 
+    {
+        commandLine += " " + commandLineArgs;
+    }
+
+    const BOOL result = CreateProcessA(
+        applicationPath.c_str(),          // 应用程序路径
+        &commandLine[0],                  // 命令行参数
+        NULL,                             // 进程安全属性
+        NULL,                             // 线程安全属性
+        FALSE,                            // 是否继承句柄
+        0,                                // 创建标志
+        NULL,                             // 使用父进程的环境变量
+        workingDirectory.empty() ? NULL : workingDirectory.c_str(), // 工作目录
+        &si,                              // 启动信息
+        &pi                               // 进程信息
+    );
+
+    if (!result)
+    {
+        return false;
+    }
+
+    if (!isAsynStart)
+    {
+        WaitForSingleObject(pi.hProcess, INFINITE);
+    }
+    // 清理资源
+    CloseHandle(pi.hProcess);
+    CloseHandle(pi.hThread);
+    return true;
+}
+
+bool TerminateProcess(DWORD processId)
+{
+    HANDLE hProcess = OpenProcess(PROCESS_TERMINATE, FALSE, processId);
+    if (!hProcess)
+    {
+        return false;
+    }
+
+    const BOOL result = TerminateProcess(hProcess, 0);
+    CloseHandle(hProcess);
+
+    return result;
+}
+bool TerminateProcess(const string& processName, bool isConsiderUpperAndLower)
+{
+    const vector<AO_Process> processes = GetProcesses(processName, isConsiderUpperAndLower);
+    bool result = false;
+    for (const AO_Process& process : processes)
+    {
+        result = result || TerminateProcess(process.ID);
+    }
+    return result;
+}
+
+std::string ConvertWideToString(const wchar_t* wideStr) {
+    int bufferSize = WideCharToMultiByte(CP_UTF8, 0, wideStr, -1, nullptr, 0, nullptr, nullptr);
+    if (bufferSize == 0) {
+        throw std::runtime_error("WideCharToMultiByte failed.");
+    }
+    std::string str(bufferSize - 1, '\0');
+    WideCharToMultiByte(CP_UTF8, 0, wideStr, -1, &str[0], bufferSize, nullptr, nullptr);
+    return str;
+}
+
+AO_IniContent ReadIniFile(const std::string& filePath)
+{
+
 }

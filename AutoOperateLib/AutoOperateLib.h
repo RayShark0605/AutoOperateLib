@@ -448,7 +448,7 @@ void BringWindowToFront(AO_Window& window);
 // 窗口置于后台，使其不再是活动窗口
 void SendWindowToBack(AO_Window& window);
 
-// 进程占用内存信息
+// 进程占用内存信息。注意，单位都是字节
 struct AO_ProcessMemoryInfo
 {
     ULONGLONG pagefileUsage;        // 内存提交大小（在虚拟内存中的使用量）
@@ -459,7 +459,45 @@ struct AO_ProcessMemoryInfo
 // 进程信息
 struct AO_Process
 {
-    DWORD ID;
-
+    DWORD ID;                           // 进程ID
+    std::string processName = "";       // 进程名
+    std::string processPath = "";       // 进程路径
+    AO_ProcessMemoryInfo memoryInfo;    // 内存信息
 };
+
+// 获取当前进程名
+std::string GetCurrentProcessName();
+
+// 获取当前进程所在路径
+std::string GetCurrentProcessPath();
+
+// 获取所有进程信息
+std::vector<AO_Process> GetProcessesInfo();
+
+// 获取所有名称中包含传入字符串的进程信息。isConsiderUpperAndLower为false时，将不考虑字符串的大小写差异。
+std::vector<AO_Process> GetProcesses(const std::string& nameSubString, bool isConsiderUpperAndLower = false);
+
+// 获取所有名称中包含传入字符串的进程包含的窗口。isConsiderUpperAndLower为false时，将不考虑字符串的大小写差异。isStreamliningMode为true时，将忽略工具窗口、无标题窗口、大小为0的窗口等。
+std::vector<AO_Window> GetProcessWindows(const std::string& nameSubString, bool isConsiderUpperAndLower = false, bool isStreamliningMode = true);
+
+// 启动一个进程。applicationPath为进程exe路径，commandLineArgs为传入参数，workingDirectory为工作目录，isAsynStart为true时该函数将不会等待进程退出
+bool StartProcess(const std::string& applicationPath, const std::string& commandLineArgs = "", const std::string& workingDirectory = "", bool isAsynStart = true);
+
+// 根据进程ID或者进程名包含的字符串去终止进程
+bool TerminateProcess(DWORD processId);
+bool TerminateProcess(const std::string& processName, bool isConsiderUpperAndLower = false); // 如果所有进程都终止出错，则返回false
+
+// 读取.ini文件
+typedef std::unordered_map<std::string, std::string> AO_IniSection;
+typedef std::unordered_map<std::string, AO_IniSection> AO_IniContent;
+AO_IniContent ReadIniFile(const std::string& filePath);
+
+
+
+
+
+
+
+
+
 
