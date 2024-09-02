@@ -1,10 +1,10 @@
 ﻿  AutoOperateLib.cpp
-C:\Users\localuser\Desktop\AutoOperateLib\AutoOperateLib\AutoOperateLib.cpp(379,63): warning C4244: “参数”: 从“WPARAM”转换到“const _Kty”，可能丢失数据
-C:\Users\localuser\Desktop\AutoOperateLib\AutoOperateLib\AutoOperateLib.cpp(379,63): warning C4244:         with
-C:\Users\localuser\Desktop\AutoOperateLib\AutoOperateLib\AutoOperateLib.cpp(379,63): warning C4244:         [
-C:\Users\localuser\Desktop\AutoOperateLib\AutoOperateLib\AutoOperateLib.cpp(379,63): warning C4244:             _Kty=int
-C:\Users\localuser\Desktop\AutoOperateLib\AutoOperateLib\AutoOperateLib.cpp(379,63): warning C4244:         ]
-C:\Users\localuser\Desktop\AutoOperateLib\AutoOperateLib\AutoOperateLib.cpp(381,30): warning C4244: “参数”: 从“WPARAM”转换到“int”，可能丢失数据
-C:\Users\localuser\Desktop\AutoOperateLib\AutoOperateLib\AutoOperateLib.cpp(1091,42): warning C4244: “参数”: 从“const DWORD”转换到“BYTE”，可能丢失数据
-C:\Users\localuser\Desktop\AutoOperateLib\AutoOperateLib\AutoOperateLib.cpp(1094,40): warning C4244: “参数”: 从“const DWORD”转换到“BYTE”，可能丢失数据
+C:\Users\localuser\Desktop\AutoOperateLib\AutoOperateLib\AutoOperateLib.cpp(408,63): warning C4244: “参数”: 从“WPARAM”转换到“const _Kty”，可能丢失数据
+C:\Users\localuser\Desktop\AutoOperateLib\AutoOperateLib\AutoOperateLib.cpp(408,63): warning C4244:         with
+C:\Users\localuser\Desktop\AutoOperateLib\AutoOperateLib\AutoOperateLib.cpp(408,63): warning C4244:         [
+C:\Users\localuser\Desktop\AutoOperateLib\AutoOperateLib\AutoOperateLib.cpp(408,63): warning C4244:             _Kty=int
+C:\Users\localuser\Desktop\AutoOperateLib\AutoOperateLib\AutoOperateLib.cpp(408,63): warning C4244:         ]
+C:\Users\localuser\Desktop\AutoOperateLib\AutoOperateLib\AutoOperateLib.cpp(410,30): warning C4244: “参数”: 从“WPARAM”转换到“int”，可能丢失数据
+C:\Users\localuser\Desktop\AutoOperateLib\AutoOperateLib\AutoOperateLib.cpp(1120,42): warning C4244: “参数”: 从“const DWORD”转换到“BYTE”，可能丢失数据
+C:\Users\localuser\Desktop\AutoOperateLib\AutoOperateLib\AutoOperateLib.cpp(1123,40): warning C4244: “参数”: 从“const DWORD”转换到“BYTE”，可能丢失数据
   AutoOperateLib.vcxproj -> C:\Users\localuser\Desktop\AutoOperateLib\x64\Debug\AutoOperateLib.lib

@@ -399,6 +399,12 @@ bool CaptureScreenToFile(const AO_MonitorInfo& monitor, const std::string& fileP
 bool CaptureScreenToClipboard(const AO_Rect& rect);
 bool CaptureScreenToClipboard(const AO_MonitorInfo& monitor); // 截取某个显示器的全部内容
 
+#include <opencv2/opencv.hpp>
+// 在屏幕指定区域截图并导出为OpenCV影像格式
+cv::Mat CaptureScreenToCvMat(const AO_Rect& rect);
+cv::Mat CaptureScreenToCvMat(const AO_MonitorInfo& monitor); // 截取某个显示器的全部内容
+
+
 // 窗口信息
 struct AO_Window
 {
@@ -487,17 +493,47 @@ bool StartProcess(const std::string& applicationPath, const std::string& command
 bool TerminateProcess(DWORD processId);
 bool TerminateProcess(const std::string& processName, bool isConsiderUpperAndLower = false); // 如果所有进程都终止出错，则返回false
 
-// 读取.ini文件
+// 当前是否运行在管理员模式下
+bool IsRunningAsAdmin();
+
+// 关闭当前程序并在管理员模式下重启
+void RestartAsAdmin();
+
 typedef std::unordered_map<std::string, std::string> AO_IniSection;
 typedef std::unordered_map<std::string, AO_IniSection> AO_IniContent;
+// 读取.ini文件。如果包含中文或其他特殊字符，需要确保该文件为ANSI编码
 AO_IniContent ReadIniFile(const std::string& filePath);
 
+// 判断是否为已存在的路径（文件或文件夹）
+bool IsPathExists(const std::string& path);
 
+// 判断是否为已存在的文件
+bool IsFileExists(const std::string& path);
 
+// 判断是否为已存在的文件夹
+bool IsDirExists(const std::string& path);
 
+// 删除文件，删除失败则返回false
+#undef DeleteFile
+bool DeleteFile(const std::string& path);
 
+// 删除文件夹，删除失败则返回false
+bool DeleteDirectory(const std::string& path);
 
+// 创建一个文件，创建失败则返回false，如果文件已存在则会覆盖
+#undef CreateFile
+bool CreateFile(const std::string& path);
 
+// 创建一个文件夹，创建失败则返回false，如果文件夹已存在则会返回false
+#undef CreateDirectory
+bool CreateDirectory(const std::string& path);
 
+// 查找某个文件夹下的所有文件，返回这些文件的绝对路径。
+// 可以通过extensions来筛选出特定格式的文件后缀名，例如extensions可以为{".txt",".pdf",".rar"}等这样的组合。extensions为空则表示返回所有文件，不对后缀名做筛选
+// isRecursively为false则表示不递归地查找
+std::vector<std::string> GetAllFilesPath(const std::string& dirPath, const std::vector<std::string>& extensions = {}, bool isRecursively = true);
 
-
+// 从image中查找targetImage并要求置信度在confidence以上，返回值rect为在confidence以上的最高置信度所在的矩形。如果查找不到则返回false
+// confidence的范围是 0 ~ 1
+// 使用的是OpenCV的matchTemplate方法，对影像的缩放没有抵抗能力
+bool FindImage(const cv::Mat& image, const cv::Mat& targetImage, AO_Rect& rect, double confidence = 0.85);

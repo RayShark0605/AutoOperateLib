@@ -10,11 +10,6 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Test", "Test\Test.vcxproj",
 		{015DA2EA-8ED3-4A05-AF2E-4FDE4DB7C2C2} = {015DA2EA-8ED3-4A05-AF2E-4FDE4DB7C2C2}
 	EndProjectSection
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "BossKey", "BossKey\BossKey.vcxproj", "{125B6D46-822F-4E4E-9038-61CD0EABEEEE}"
-	ProjectSection(ProjectDependencies) = postProject
-		{015DA2EA-8ED3-4A05-AF2E-4FDE4DB7C2C2} = {015DA2EA-8ED3-4A05-AF2E-4FDE4DB7C2C2}
-	EndProjectSection
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
@@ -39,14 +34,6 @@ Global
 		{F143DD33-44F1-4314-8705-C0FE967B86CF}.Release|x64.Build.0 = Release|x64
 		{F143DD33-44F1-4314-8705-C0FE967B86CF}.Release|x86.ActiveCfg = Release|Win32
 		{F143DD33-44F1-4314-8705-C0FE967B86CF}.Release|x86.Build.0 = Release|Win32
-		{125B6D46-822F-4E4E-9038-61CD0EABEEEE}.Debug|x64.ActiveCfg = Debug|x64
-		{125B6D46-822F-4E4E-9038-61CD0EABEEEE}.Debug|x64.Build.0 = Debug|x64
-		{125B6D46-822F-4E4E-9038-61CD0EABEEEE}.Debug|x86.ActiveCfg = Debug|Win32
-		{125B6D46-822F-4E4E-9038-61CD0EABEEEE}.Debug|x86.Build.0 = Debug|Win32
-		{125B6D46-822F-4E4E-9038-61CD0EABEEEE}.Release|x64.ActiveCfg = Release|x64
-		{125B6D46-822F-4E4E-9038-61CD0EABEEEE}.Release|x64.Build.0 = Release|x64
-		{125B6D46-822F-4E4E-9038-61CD0EABEEEE}.Release|x86.ActiveCfg = Release|Win32
-		{125B6D46-822F-4E4E-9038-61CD0EABEEEE}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

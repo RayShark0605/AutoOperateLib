@@ -10,9 +10,9 @@
 
 using namespace std;
 
-string StringReplace(const string& path, char oldChar, char newChar)
+string StringReplace(const string& str, char oldChar, char newChar)
 {
-    string result = path;
+    string result = str;
     for (size_t i = 0; i < result.size(); i++)
     {
         if (result[i] == oldChar)
@@ -22,6 +22,17 @@ string StringReplace(const string& path, char oldChar, char newChar)
     }
 
     return result;
+}
+vector<string> StringSplit(const string& s, char delimiter)
+{
+    vector<string> tokens;
+    string token;
+    istringstream tokenStream(s);
+    while (getline(tokenStream, token, delimiter))
+    {
+        tokens.push_back(token);
+    }
+    return tokens;
 }
 
 AO_Point::AO_Point()
@@ -106,6 +117,24 @@ string WCharToString(const wchar_t* wchar)
 #pragma warning(suppress : 4996)
     wcstombs(buffer, wchar, 256);
     return string(buffer);
+}
+string WStringToString(const wstring& wstr)
+{
+    if (wstr.empty())
+    {
+        return string();
+    }
+
+    // 获取转换后的字符串长度，不包括终止符
+    int size_needed = WideCharToMultiByte(CP_UTF8, 0, wstr.c_str(), (int)wstr.length(), NULL, 0, NULL, NULL);
+
+    // 分配相应大小的string
+    string str(size_needed, 0);
+
+    // 进行转换
+    WideCharToMultiByte(CP_UTF8, 0, wstr.c_str(), (int)wstr.length(), &str[0], size_needed, NULL, NULL);
+
+    return str;
 }
 
 BOOL CALLBACK MonitorEnumProc(HMONITOR hMonitor, HDC hdcMonitor, LPRECT lprcMonitor, LPARAM dwData)
@@ -1375,6 +1404,46 @@ bool CaptureScreenToClipboard(const AO_MonitorInfo& monitor)
     return CaptureScreenToClipboard(monitor.GetRect());
 }
 
+cv::Mat CaptureScreenToCvMat(const AO_Rect& rect)
+{
+    const HDC hScreenDC = GetDC(NULL);
+    // 创建内存设备上下文
+    const HDC hMemoryDC = CreateCompatibleDC(hScreenDC);
+
+    // 创建兼容位图
+    const HBITMAP hBitmap = CreateCompatibleBitmap(hScreenDC, rect.width, rect.height);
+    // 选择位图到内存设备上下文中
+    const HBITMAP hOldBitmap = (HBITMAP)SelectObject(hMemoryDC, hBitmap);
+
+    // 截取屏幕到内存设备上下文
+    BitBlt(hMemoryDC, 0, 0, rect.width, rect.height, hScreenDC, rect.leftTop.x, rect.leftTop.y, SRCCOPY);
+
+    // 创建位图信息头
+    BITMAPINFOHEADER bmi = { 0 };
+    bmi.biSize = sizeof(BITMAPINFOHEADER);
+    bmi.biWidth = rect.width;
+    bmi.biHeight = -rect.height;  // 负高度表示将图像翻转过来
+    bmi.biPlanes = 1;
+    bmi.biBitCount = 24;  // 24位色深
+    bmi.biCompression = BI_RGB;
+
+    // 创建cv::Mat并从位图中获取数据
+    cv::Mat mat(rect.height, rect.width, CV_8UC3);
+    GetDIBits(hMemoryDC, hBitmap, 0, rect.height, mat.data, (BITMAPINFO*)&bmi, DIB_RGB_COLORS);
+
+    // 释放资源
+    SelectObject(hMemoryDC, hOldBitmap);
+    DeleteObject(hBitmap);
+    DeleteDC(hMemoryDC);
+    ReleaseDC(NULL, hScreenDC);
+
+    return mat;
+}
+cv::Mat CaptureScreenToCvMat(const AO_MonitorInfo& monitor)
+{
+    return CaptureScreenToCvMat(monitor.GetRect());
+}
+
 BOOL CALLBACK EnumWindowsProc(HWND hwnd, LPARAM lParam)
 {
     auto params = reinterpret_cast<pair<vector<AO_Window>*, bool>*>(lParam);
@@ -1591,23 +1660,30 @@ string GetCurrentProcessName()
 
 string GetCurrentProcessPath()
 {
+    SetConsoleOutputCP(CP_UTF8);
     wchar_t exePath[MAX_PATH];
-    DWORD size = GetModuleFileNameW(NULL, exePath, MAX_PATH);
+    const DWORD size = GetModuleFileNameW(NULL, exePath, MAX_PATH);
 
-    if (size == 0)
-    {
+    if (size == 0) {
         return "";
     }
 
-    int bufferSize = WideCharToMultiByte(CP_UTF8, 0, exePath, -1, NULL, 0, NULL, NULL);
-    if (bufferSize == 0)
-    {
+    // 获取转换后的UTF-8字符串所需的缓冲区大小
+    const int bufferSize = WideCharToMultiByte(CP_UTF8, 0, exePath, -1, NULL, 0, NULL, NULL);
+    if (bufferSize == 0) {
         return "";
     }
 
-    string fullPath(bufferSize, 0);
-    WideCharToMultiByte(CP_UTF8, 0, exePath, -1, &fullPath[0], bufferSize, NULL, NULL);
-    fullPath = StringReplace(fullPath, '\\', '/');
+    // 创建用于存储UTF-8字符串的缓冲区
+    vector<char> buffer(bufferSize);
+    WideCharToMultiByte(CP_UTF8, 0, exePath, -1, buffer.data(), bufferSize, NULL, NULL);
+
+    // 将缓冲区内容转换为string
+    string fullPath(buffer.begin(), buffer.end() - 1);
+
+    // 可选：将路径中的反斜杠替换为斜杠
+    replace(fullPath.begin(), fullPath.end(), '\\', '/');
+
     return fullPath;
 }
 
@@ -1888,17 +1964,225 @@ bool TerminateProcess(const string& processName, bool isConsiderUpperAndLower)
     return result;
 }
 
-std::string ConvertWideToString(const wchar_t* wideStr) {
-    int bufferSize = WideCharToMultiByte(CP_UTF8, 0, wideStr, -1, nullptr, 0, nullptr, nullptr);
-    if (bufferSize == 0) {
-        throw std::runtime_error("WideCharToMultiByte failed.");
-    }
-    std::string str(bufferSize - 1, '\0');
-    WideCharToMultiByte(CP_UTF8, 0, wideStr, -1, &str[0], bufferSize, nullptr, nullptr);
-    return str;
-}
-
-AO_IniContent ReadIniFile(const std::string& filePath)
+bool IsRunningAsAdmin()
 {
+    BOOL isAdmin = false;
+    PSID administratorsGroup = NULL;
 
+    SID_IDENTIFIER_AUTHORITY ntAuthority = SECURITY_NT_AUTHORITY;
+    if (AllocateAndInitializeSid(&ntAuthority, 2, SECURITY_BUILTIN_DOMAIN_RID, DOMAIN_ALIAS_RID_ADMINS, 0, 0, 0, 0, 0, 0, &administratorsGroup))
+    {
+        CheckTokenMembership(NULL, administratorsGroup, &isAdmin);
+        FreeSid(administratorsGroup);
+    }
+
+    return isAdmin;
 }
+
+void RestartAsAdmin()
+{
+    WCHAR szPath[MAX_PATH];
+    if (GetModuleFileName(NULL, szPath, ARRAYSIZE(szPath)))
+    {
+        SHELLEXECUTEINFOW sei = { sizeof(sei) };
+        sei.lpVerb = L"runas";    // 以管理员权限运行
+        sei.lpFile = szPath;
+        sei.hwnd = NULL;
+        sei.nShow = SW_NORMAL;
+        if (ShellExecuteExW(&sei))
+        {
+            ExitProcess(0); // 成功以管理员权限重新启动，退出当前程序
+        }
+    }
+}
+
+AO_IniContent ReadIniFile(const string& filePath)
+{
+    AO_IniContent iniContent;
+    ifstream ifs(filePath);
+    if (!ifs.is_open())
+    {
+        return iniContent;
+    }
+    string line;
+    string currentSection;
+    while (getline(ifs, line))
+    {
+        line.erase(0, line.find_first_not_of(" \t\n\r\f\v"));
+        line.erase(line.find_last_not_of(" \t\n\r\f\v") + 1);
+        if (line.size() < 2 || line[0] == ';' || line[0] == '#')
+        {
+            continue;
+        }
+        if (line[0] == '[' && line.back() == ']')
+        {
+            currentSection = line.substr(1, line.size() - 2);
+            iniContent[currentSection] = AO_IniSection();
+        }
+        else
+        {
+            const string::size_type pos = line.find('=');
+            if (pos == string::npos)
+            {
+                continue;
+            }
+            const string key = line.substr(0, pos);
+            const string value = line.substr(pos + 1);
+            iniContent[currentSection][key] = value;
+        }
+    }
+    ifs.close();
+
+    return iniContent;
+}
+
+bool IsPathExists(const string& path)
+{
+    const filesystem::path filePath(path);
+    return filesystem::exists(filePath);
+}
+
+bool IsFileExists(const string& path)
+{
+    const filesystem::path filePath(path);
+    return filesystem::exists(filePath) && filesystem::is_regular_file(filePath);
+}
+
+bool IsDirExists(const string& path)
+{
+    const filesystem::path filePath(path);
+    return filesystem::exists(filePath) && filesystem::is_directory(filePath);
+}
+
+bool DeleteFile(const string& path)
+{
+    const filesystem::path filePath(path);
+    if (filesystem::exists(filePath) && filesystem::is_regular_file(filePath))
+    {
+        return filesystem::remove(filePath);
+    }
+    return false;
+}
+
+bool DeleteDirectory(const string& path)
+{
+    const filesystem::path dirPath(path);
+    if (filesystem::exists(dirPath) && filesystem::is_directory(dirPath))
+    {
+        filesystem::remove_all(dirPath);
+        return true;
+    }
+    return false;
+}
+
+bool CreateFile(const string& path)
+{
+    if (path.back() == '\\' || path.back() == '/')
+    {
+        return false;
+    }
+    const filesystem::path fsPath(path);
+    const filesystem::path directoryPath = fsPath.parent_path();
+
+    // 递归创建目录
+    if (!directoryPath.empty() && !filesystem::exists(directoryPath))
+    {
+        filesystem::create_directories(directoryPath);
+    }
+
+    // 创建文件
+    ofstream ofs(fsPath);
+    return ofs.good();
+}
+
+bool CreateDirectory(const string& originPath)
+{
+    string path = originPath;
+    if (path.back() == '\\' || path.back() == '/')
+    {
+        path.pop_back();
+    }
+    const filesystem::path fsPath(path);
+    return filesystem::create_directories(fsPath);
+}
+
+vector<string> GetAllFilesPath(const string& dirPath, const vector<string>& extensions, bool isRecursively)
+{
+    if (!IsDirExists(dirPath))
+    {
+        return {};
+    }
+    vector<string> filesPath;
+    filesystem::path path(dirPath);
+    if (isRecursively)
+    {
+        for (const auto& entry : filesystem::recursive_directory_iterator(path))
+        {
+            if (entry.is_regular_file())
+            {
+                const filesystem::path& filePath = entry.path();
+                if (extensions.empty() || find(extensions.begin(), extensions.end(), filePath.extension().string()) != extensions.end())
+                {
+                    filesPath.push_back(filesystem::absolute(filePath).string());
+                }
+            }
+        }
+    }
+    else
+    {
+        for (const auto& entry : filesystem::directory_iterator(path))
+        {
+            if (entry.is_regular_file())
+            {
+                const filesystem::path& filePath = entry.path();
+                if (extensions.empty() || find(extensions.begin(), extensions.end(), filePath.extension().string()) != extensions.end())
+                {
+                    filesPath.push_back(filesystem::absolute(filePath).string());
+                }
+            }
+        }
+    }
+    for (string& filePath : filesPath)
+    {
+        filePath = StringReplace(filePath, '\\', '/');
+    }
+
+    return filesPath;
+}
+
+bool FindImage(const cv::Mat& image, const cv::Mat& targetImage, AO_Rect& rect, double confidence)
+{
+    if (image.empty() || targetImage.empty() || confidence < 0 || confidence > 1 || image.rows <= targetImage.rows || image.cols <= targetImage.cols)
+    {
+        return false;
+    }
+
+    // 结果矩阵
+    cv::Mat result;
+    const int resultCols = image.cols - targetImage.cols + 1;
+    const int resultRows = image.rows - targetImage.rows + 1;
+    result.create(resultRows, resultCols, CV_32FC1);
+
+    // 使用 cv::matchTemplate 进行模板匹配
+    cv::matchTemplate(image, targetImage, result, cv::TM_CCOEFF_NORMED);
+
+    // 找到匹配结果中的最大值及其位置
+    double minVal, maxVal;
+    cv::Point minLoc, maxLoc;
+    cv::minMaxLoc(result, &minVal, &maxVal, &minLoc, &maxLoc);
+
+    if (maxVal >= confidence)
+    {
+        rect = AO_Rect(maxLoc.x, maxLoc.y, targetImage.cols, targetImage.rows);
+        return true;
+    }
+
+    return false;
+}
+
+
+
+
+
+
+
