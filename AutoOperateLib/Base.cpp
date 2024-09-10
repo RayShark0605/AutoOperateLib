@@ -1,4 +1,4 @@
-﻿#include "AutoOperateLib.h"
+﻿#include "Base.h"
 
 #include <iomanip>
 #include <sstream>
@@ -33,6 +33,15 @@ vector<string> StringSplit(const string& s, char delimiter)
         tokens.push_back(token);
     }
     return tokens;
+}
+wstring StringToWString(const string& str)
+{
+    int len;
+    const int slength = static_cast<int>(str.length());
+    len = MultiByteToWideChar(CP_ACP, 0, str.c_str(), slength, 0, 0);
+    wstring r(len, L'\0');
+    MultiByteToWideChar(CP_ACP, 0, str.c_str(), slength, &r[0], len);
+    return r;
 }
 
 AO_Point::AO_Point()
@@ -102,15 +111,7 @@ AO_Rect AO_MonitorInfo::GetRect() const
     return AO_Rect(leftTop, width, height);
 }
 
-wstring StringToWString(const string& str)
-{
-    int len;
-    const int slength = static_cast<int>(str.length());
-    len = MultiByteToWideChar(CP_ACP, 0, str.c_str(), slength, 0, 0);
-    wstring r(len, L'\0');
-    MultiByteToWideChar(CP_ACP, 0, str.c_str(), slength, &r[0], len);
-    return r;
-}
+
 string WCharToString(const wchar_t* wchar)
 {
     char buffer[256];
@@ -371,6 +372,10 @@ AO_HotkeyManager::AO_HotkeyManager()
 AO_HotkeyManager::~AO_HotkeyManager()
 {
     isRunning = false;
+    for (const auto& pair : hotkeys)
+    {
+        UnregisterHotkey(pair.first);
+    }
     if (processThread.joinable())
     {
         PostThreadMessage(GetThreadId(processThread.native_handle()), WM_QUIT, 0, 0);
@@ -386,8 +391,14 @@ void AO_HotkeyManager::RegisterHotkey(int id, UINT modifiers, UINT vk, HotkeyCal
 void AO_HotkeyManager::UnregisterHotkey(int id)
 {
     lock_guard<mutex> lock(mtx);
-    hotkeys.erase(id);
-    callbacks.erase(id);
+    if (hotkeys.find(id) != hotkeys.end())
+    {
+        hotkeys.erase(id);
+    }
+    if (callbacks.find(id) != callbacks.end())
+    {
+        callbacks.erase(id);
+    }
 }
 void AO_HotkeyManager::MessageLoop()
 {
@@ -1404,46 +1415,6 @@ bool CaptureScreenToClipboard(const AO_MonitorInfo& monitor)
     return CaptureScreenToClipboard(monitor.GetRect());
 }
 
-cv::Mat CaptureScreenToCvMat(const AO_Rect& rect)
-{
-    const HDC hScreenDC = GetDC(NULL);
-    // 创建内存设备上下文
-    const HDC hMemoryDC = CreateCompatibleDC(hScreenDC);
-
-    // 创建兼容位图
-    const HBITMAP hBitmap = CreateCompatibleBitmap(hScreenDC, rect.width, rect.height);
-    // 选择位图到内存设备上下文中
-    const HBITMAP hOldBitmap = (HBITMAP)SelectObject(hMemoryDC, hBitmap);
-
-    // 截取屏幕到内存设备上下文
-    BitBlt(hMemoryDC, 0, 0, rect.width, rect.height, hScreenDC, rect.leftTop.x, rect.leftTop.y, SRCCOPY);
-
-    // 创建位图信息头
-    BITMAPINFOHEADER bmi = { 0 };
-    bmi.biSize = sizeof(BITMAPINFOHEADER);
-    bmi.biWidth = rect.width;
-    bmi.biHeight = -rect.height;  // 负高度表示将图像翻转过来
-    bmi.biPlanes = 1;
-    bmi.biBitCount = 24;  // 24位色深
-    bmi.biCompression = BI_RGB;
-
-    // 创建cv::Mat并从位图中获取数据
-    cv::Mat mat(rect.height, rect.width, CV_8UC3);
-    GetDIBits(hMemoryDC, hBitmap, 0, rect.height, mat.data, (BITMAPINFO*)&bmi, DIB_RGB_COLORS);
-
-    // 释放资源
-    SelectObject(hMemoryDC, hOldBitmap);
-    DeleteObject(hBitmap);
-    DeleteDC(hMemoryDC);
-    ReleaseDC(NULL, hScreenDC);
-
-    return mat;
-}
-cv::Mat CaptureScreenToCvMat(const AO_MonitorInfo& monitor)
-{
-    return CaptureScreenToCvMat(monitor.GetRect());
-}
-
 BOOL CALLBACK EnumWindowsProc(HWND hwnd, LPARAM lParam)
 {
     auto params = reinterpret_cast<pair<vector<AO_Window>*, bool>*>(lParam);
@@ -1637,7 +1608,7 @@ void SendWindowToBack(AO_Window& window)
     SetWindowPos(window.hwnd, HWND_BOTTOM, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE);
 }
 
-string GetCurrentProcessName()
+string GetCurrentProcessName(bool isContainExtensions)
 {
     wchar_t exePath[MAX_PATH];
     const DWORD size = GetModuleFileNameW(NULL, exePath, MAX_PATH);
@@ -1655,6 +1626,12 @@ string GetCurrentProcessName()
     string exeName(bufferSize, 0);
     WideCharToMultiByte(CP_UTF8, 0, exePath, -1, &exeName[0], bufferSize, NULL, NULL);
     exeName = exeName.substr(exeName.find_last_of("\\/") + 1);
+
+    if (!isContainExtensions)
+    {
+        const size_t pos = exeName.find_last_of('.');
+        exeName = exeName.substr(0, pos);
+    }
     return exeName;
 }
 
@@ -2148,36 +2125,6 @@ vector<string> GetAllFilesPath(const string& dirPath, const vector<string>& exte
     }
 
     return filesPath;
-}
-
-bool FindImage(const cv::Mat& image, const cv::Mat& targetImage, AO_Rect& rect, double confidence)
-{
-    if (image.empty() || targetImage.empty() || confidence < 0 || confidence > 1 || image.rows <= targetImage.rows || image.cols <= targetImage.cols)
-    {
-        return false;
-    }
-
-    // 结果矩阵
-    cv::Mat result;
-    const int resultCols = image.cols - targetImage.cols + 1;
-    const int resultRows = image.rows - targetImage.rows + 1;
-    result.create(resultRows, resultCols, CV_32FC1);
-
-    // 使用 cv::matchTemplate 进行模板匹配
-    cv::matchTemplate(image, targetImage, result, cv::TM_CCOEFF_NORMED);
-
-    // 找到匹配结果中的最大值及其位置
-    double minVal, maxVal;
-    cv::Point minLoc, maxLoc;
-    cv::minMaxLoc(result, &minVal, &maxVal, &minLoc, &maxLoc);
-
-    if (maxVal >= confidence)
-    {
-        rect = AO_Rect(maxLoc.x, maxLoc.y, targetImage.cols, targetImage.rows);
-        return true;
-    }
-
-    return false;
 }
 
 

@@ -8,6 +8,10 @@
 #include <functional>
 #include <unordered_map>
 
+std::string StringReplace(const std::string& str, char oldChar, char newChar);
+std::vector<std::string> StringSplit(const std::string& s, char delimiter);
+std::wstring StringToWString(const std::string& str);
+
 // 二维整数点
 struct AO_Point
 {
@@ -399,12 +403,6 @@ bool CaptureScreenToFile(const AO_MonitorInfo& monitor, const std::string& fileP
 bool CaptureScreenToClipboard(const AO_Rect& rect);
 bool CaptureScreenToClipboard(const AO_MonitorInfo& monitor); // 截取某个显示器的全部内容
 
-#include <opencv2/opencv.hpp>
-// 在屏幕指定区域截图并导出为OpenCV影像格式
-cv::Mat CaptureScreenToCvMat(const AO_Rect& rect);
-cv::Mat CaptureScreenToCvMat(const AO_MonitorInfo& monitor); // 截取某个显示器的全部内容
-
-
 // 窗口信息
 struct AO_Window
 {
@@ -472,7 +470,7 @@ struct AO_Process
 };
 
 // 获取当前进程名
-std::string GetCurrentProcessName();
+std::string GetCurrentProcessName(bool isContainExtensions = true);
 
 // 获取当前进程所在路径
 std::string GetCurrentProcessPath();
@@ -533,7 +531,5 @@ bool CreateDirectory(const std::string& path);
 // isRecursively为false则表示不递归地查找
 std::vector<std::string> GetAllFilesPath(const std::string& dirPath, const std::vector<std::string>& extensions = {}, bool isRecursively = true);
 
-// 从image中查找targetImage并要求置信度在confidence以上，返回值rect为在confidence以上的最高置信度所在的矩形。如果查找不到则返回false
-// confidence的范围是 0 ~ 1
-// 使用的是OpenCV的matchTemplate方法，对影像的缩放没有抵抗能力
-bool FindImage(const cv::Mat& image, const cv::Mat& targetImage, AO_Rect& rect, double confidence = 0.85);
+
+

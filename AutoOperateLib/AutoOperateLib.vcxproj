@@ -71,10 +71,12 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <IncludePath>../Thirdparty/OpenCV-3.4.15/opencv/build/include;$(IncludePath)</IncludePath>
+    <IncludePath>../Thirdparty/OpenCV-3.4.15/opencv/build/include;../Thirdparty/curl/include;../Thirdparty/jsoncpp/include;$(IncludePath)</IncludePath>
+    <LibraryPath>../Thirdparty/curl/lib;../Thirdparty/jsoncpp/lib/Debug;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <IncludePath>../Thirdparty/OpenCV-3.4.15/opencv/build/include;$(VC_IncludePath);$(WindowsSDK_IncludePath)</IncludePath>
+    <IncludePath>../Thirdparty/OpenCV-3.4.15/opencv/build/include;../Thirdparty/curl/include;../Thirdparty/jsoncpp/include;$(VC_IncludePath);$(WindowsSDK_IncludePath)</IncludePath>
+    <LibraryPath>../Thirdparty/curl/lib;../Thirdparty/jsoncpp/lib/Release;$(VC_LibraryPath_x64);$(WindowsSDK_LibraryPath_x64)</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -137,10 +139,12 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="AutoOperateLib.h" />
+    <ClInclude Include="Base.h" />
+    <ClInclude Include="CV.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="AutoOperateLib.cpp" />
+    <ClCompile Include="Base.cpp" />
+    <ClCompile Include="CV.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
