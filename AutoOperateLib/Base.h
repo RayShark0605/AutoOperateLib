@@ -531,5 +531,42 @@ bool CreateDirectory(const std::string& path);
 // isRecursively为false则表示不递归地查找
 std::vector<std::string> GetAllFilesPath(const std::string& dirPath, const std::vector<std::string>& extensions = {}, bool isRecursively = true);
 
+// 颜色
+struct AO_Color
+{
+    unsigned char r;
+    unsigned char g;
+    unsigned char b;
+
+    static AO_Color Black;
+    static AO_Color White;
+    static AO_Color Red;
+    static AO_Color Green;
+    static AO_Color Blue;
+
+    AO_Color();
+    AO_Color(unsigned char r, unsigned char g, unsigned char b);
+
+    // 计算当前颜色与targetColor之间的相似度，返回0~1之间的数值
+    double CalculteSimilarity(const AO_Color& targetColor) const;
+    static double CalculteSimilarity(const AO_Color& color1, const AO_Color& color2);
+};
+
+// 获取全局屏幕(x, y)坐标处的像素值
+AO_Color GetScreenPixelColor(int x, int y);
+AO_Color GetScreenPixelColor(const AO_Point& point);
+
+// 屏幕找色
+// 从全局屏幕中找色，返回相似度最大的颜色位置，如果最大相似度小于similarity，则返回false
+bool ScreenFindColor(const AO_Color& targetColor, AO_Point& position, double similarity = 0.9);
+// 从全局屏幕中找色，返回所有与targetColor相似度大于similarity的像素坐标
+std::vector<AO_Point> ScreenFindColor(const AO_Color& targetColor, double similarity = 0.9);
+// 从全局屏幕的某个区域中找色，返回相似度最大的颜色位置，如果最大相似度小于similarity，则返回false
+bool ScreenFindColor(const AO_Color& targetColor, const AO_Rect& rect, AO_Point& position, double similarity = 0.9);
+// 从全局屏幕的某个区域中找色，返回所有与targetColor相似度大于similarity的像素坐标
+std::vector<AO_Point> ScreenFindColor(const AO_Color& targetColor, const AO_Rect& rect, double similarity = 0.9);
+
+// 在屏幕上绘制矩形，持续durationMS毫秒。如果isSolid为true，则绘制实心矩形
+void DrawRectangleOnScreen(const AO_Rect& rect, size_t durationMS = 2000, bool isSolid = false);
 
 

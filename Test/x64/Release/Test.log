@@ -1,13 +1,6 @@
 ﻿  Test.cpp
-C:\Users\localuser\Desktop\AutoOperateLib\Test\Test.cpp(91,17): warning C4244: “初始化”: 从“std::streamsize”转换到“int”，可能丢失数据
-C:\Users\localuser\Desktop\AutoOperateLib\Test\Test.cpp(133,50): warning C4267: “参数”: 从“size_t”转换到“int”，可能丢失数据
-C:\Users\localuser\Desktop\AutoOperateLib\Test\Test.cpp(140,70): warning C4267: “参数”: 从“size_t”转换到“int”，可能丢失数据
-C:\Users\localuser\Desktop\AutoOperateLib\Test\Test.cpp(142,60): warning C4267: “参数”: 从“size_t”转换到“int”，可能丢失数据
-C:\Users\localuser\Desktop\AutoOperateLib\Test\Test.cpp(147,71): warning C4267: “参数”: 从“size_t”转换到“int”，可能丢失数据
-C:\Users\localuser\Desktop\AutoOperateLib\Test\Test.cpp(149,61): warning C4267: “参数”: 从“size_t”转换到“int”，可能丢失数据
   正在生成代码
-  534 of 691 functions (77.3%) were compiled, the rest were copied from previous compilation.
-    447 functions were new in current compilation
-    58 functions had inline decision re-evaluated but remain unchanged
+  Compiler switch has changed, fall back to full compilation.
+  All 530 functions were compiled because no usable IPDB/IOBJ from previous compilation was found.
   已完成代码的生成
   Test.vcxproj -> C:\Users\localuser\Desktop\AutoOperateLib\x64\Release\Test.exe

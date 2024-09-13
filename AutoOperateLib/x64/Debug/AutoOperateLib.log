@@ -1,32 +1,43 @@
-﻿  CV.cpp
-C:\Users\localuser\Desktop\AutoOperateLib\AutoOperateLib\CV.cpp(182,68): warning C4267: “参数”: 从“size_t”转换到“unsigned int”，可能丢失数据
-C:\Users\localuser\Desktop\AutoOperateLib\AutoOperateLib\CV.cpp(187,92): warning C4267: “参数”: 从“size_t”转换到“int”，可能丢失数据
-C:\Users\localuser\Desktop\AutoOperateLib\AutoOperateLib\CV.cpp(197,78): warning C4267: “参数”: 从“size_t”转换到“int”，可能丢失数据
-C:\Users\localuser\Desktop\AutoOperateLib\AutoOperateLib\CV.cpp(199,68): warning C4267: “参数”: 从“size_t”转换到“int”，可能丢失数据
-C:\Users\localuser\Desktop\AutoOperateLib\AutoOperateLib\CV.cpp(204,79): warning C4267: “参数”: 从“size_t”转换到“int”，可能丢失数据
-C:\Users\localuser\Desktop\AutoOperateLib\AutoOperateLib\CV.cpp(206,69): warning C4267: “参数”: 从“size_t”转换到“int”，可能丢失数据
-C:\Users\localuser\Desktop\AutoOperateLib\AutoOperateLib\CV.cpp(230,25): warning C4244: “初始化”: 从“std::streamsize”转换到“int”，可能丢失数据
-C:\Users\localuser\Desktop\AutoOperateLib\AutoOperateLib\CV.cpp(272,58): warning C4267: “参数”: 从“size_t”转换到“int”，可能丢失数据
-C:\Users\localuser\Desktop\AutoOperateLib\AutoOperateLib\CV.cpp(425,13): warning C4996: 'SHA256_Init': Since OpenSSL 3.0
-C:\Users\localuser\Desktop\AutoOperateLib\AutoOperateLib\CV.cpp(426,13): warning C4996: 'SHA256_Update': Since OpenSSL 3.0
-C:\Users\localuser\Desktop\AutoOperateLib\AutoOperateLib\CV.cpp(427,13): warning C4996: 'SHA256_Final': Since OpenSSL 3.0
-C:\Users\localuser\Desktop\AutoOperateLib\AutoOperateLib\CV.cpp(457,48): warning C4267: “参数”: 从“size_t”转换到“int”，可能丢失数据
-C:\Users\localuser\Desktop\AutoOperateLib\AutoOperateLib\CV.cpp(470,31): warning C4018: “<”: 有符号/无符号不匹配
-C:\Users\localuser\Desktop\AutoOperateLib\AutoOperateLib\CV.cpp(454,17): warning C4996: 'HMAC_CTX_new': Since OpenSSL 3.0
-C:\Users\localuser\Desktop\AutoOperateLib\AutoOperateLib\CV.cpp(457,13): warning C4996: 'HMAC_Init_ex': Since OpenSSL 3.0
-C:\Users\localuser\Desktop\AutoOperateLib\AutoOperateLib\CV.cpp(458,13): warning C4996: 'HMAC_Update': Since OpenSSL 3.0
-C:\Users\localuser\Desktop\AutoOperateLib\AutoOperateLib\CV.cpp(460,13): warning C4996: 'HMAC_Final': Since OpenSSL 3.0
-C:\Users\localuser\Desktop\AutoOperateLib\AutoOperateLib\CV.cpp(465,13): warning C4996: 'HMAC_CTX_free': Since OpenSSL 3.0
-C:\Users\localuser\Desktop\AutoOperateLib\AutoOperateLib\CV.cpp(535,86): warning C4244: “参数”: 从“double”转换到“int”，可能丢失数据
-C:\Users\localuser\Desktop\AutoOperateLib\AutoOperateLib\CV.cpp(535,51): warning C4244: “参数”: 从“double”转换到“int”，可能丢失数据
-C:\Users\localuser\Desktop\AutoOperateLib\AutoOperateLib\CV.cpp(536,86): warning C4244: “参数”: 从“double”转换到“int”，可能丢失数据
-C:\Users\localuser\Desktop\AutoOperateLib\AutoOperateLib\CV.cpp(536,51): warning C4244: “参数”: 从“double”转换到“int”，可能丢失数据
-C:\Users\localuser\Desktop\AutoOperateLib\AutoOperateLib\CV.cpp(537,86): warning C4244: “参数”: 从“double”转换到“int”，可能丢失数据
-C:\Users\localuser\Desktop\AutoOperateLib\AutoOperateLib\CV.cpp(537,51): warning C4244: “参数”: 从“double”转换到“int”，可能丢失数据
-C:\Users\localuser\Desktop\AutoOperateLib\AutoOperateLib\CV.cpp(538,86): warning C4244: “参数”: 从“double”转换到“int”，可能丢失数据
-C:\Users\localuser\Desktop\AutoOperateLib\AutoOperateLib\CV.cpp(538,51): warning C4244: “参数”: 从“double”转换到“int”，可能丢失数据
-C:\Users\localuser\Desktop\AutoOperateLib\AutoOperateLib\CV.cpp(551,50): warning C4244: “参数”: 从“const double”转换到“int”，可能丢失数据
-C:\Users\localuser\Desktop\AutoOperateLib\AutoOperateLib\CV.cpp(551,44): warning C4244: “参数”: 从“const double”转换到“int”，可能丢失数据
-C:\Users\localuser\Desktop\AutoOperateLib\AutoOperateLib\CV.cpp(552,38): warning C4244: “=”: 从“double”转换到“int”，可能丢失数据
-C:\Users\localuser\Desktop\AutoOperateLib\AutoOperateLib\CV.cpp(553,39): warning C4244: “=”: 从“double”转换到“int”，可能丢失数据
+﻿  Base.cpp
+C:\Users\localuser\Desktop\AutoOperateLib\AutoOperateLib\Base.cpp(419,63): warning C4244: “参数”: 从“WPARAM”转换到“const _Kty”，可能丢失数据
+C:\Users\localuser\Desktop\AutoOperateLib\AutoOperateLib\Base.cpp(419,63): warning C4244:         with
+C:\Users\localuser\Desktop\AutoOperateLib\AutoOperateLib\Base.cpp(419,63): warning C4244:         [
+C:\Users\localuser\Desktop\AutoOperateLib\AutoOperateLib\Base.cpp(419,63): warning C4244:             _Kty=int
+C:\Users\localuser\Desktop\AutoOperateLib\AutoOperateLib\Base.cpp(419,63): warning C4244:         ]
+C:\Users\localuser\Desktop\AutoOperateLib\AutoOperateLib\Base.cpp(421,30): warning C4244: “参数”: 从“WPARAM”转换到“int”，可能丢失数据
+C:\Users\localuser\Desktop\AutoOperateLib\AutoOperateLib\Base.cpp(1131,42): warning C4244: “参数”: 从“const DWORD”转换到“BYTE”，可能丢失数据
+C:\Users\localuser\Desktop\AutoOperateLib\AutoOperateLib\Base.cpp(1134,40): warning C4244: “参数”: 从“const DWORD”转换到“BYTE”，可能丢失数据
+C:\Users\localuser\Desktop\AutoOperateLib\AutoOperateLib\Base.cpp(2212,27): warning C4018: “>=”: 有符号/无符号不匹配
+  CV.cpp
+C:\Users\localuser\Desktop\AutoOperateLib\AutoOperateLib\CV.cpp(196,68): warning C4267: “参数”: 从“size_t”转换到“unsigned int”，可能丢失数据
+C:\Users\localuser\Desktop\AutoOperateLib\AutoOperateLib\CV.cpp(201,92): warning C4267: “参数”: 从“size_t”转换到“int”，可能丢失数据
+C:\Users\localuser\Desktop\AutoOperateLib\AutoOperateLib\CV.cpp(211,78): warning C4267: “参数”: 从“size_t”转换到“int”，可能丢失数据
+C:\Users\localuser\Desktop\AutoOperateLib\AutoOperateLib\CV.cpp(213,68): warning C4267: “参数”: 从“size_t”转换到“int”，可能丢失数据
+C:\Users\localuser\Desktop\AutoOperateLib\AutoOperateLib\CV.cpp(218,79): warning C4267: “参数”: 从“size_t”转换到“int”，可能丢失数据
+C:\Users\localuser\Desktop\AutoOperateLib\AutoOperateLib\CV.cpp(220,69): warning C4267: “参数”: 从“size_t”转换到“int”，可能丢失数据
+C:\Users\localuser\Desktop\AutoOperateLib\AutoOperateLib\CV.cpp(244,25): warning C4244: “初始化”: 从“std::streamsize”转换到“int”，可能丢失数据
+C:\Users\localuser\Desktop\AutoOperateLib\AutoOperateLib\CV.cpp(286,58): warning C4267: “参数”: 从“size_t”转换到“int”，可能丢失数据
+C:\Users\localuser\Desktop\AutoOperateLib\AutoOperateLib\CV.cpp(439,13): warning C4996: 'SHA256_Init': Since OpenSSL 3.0
+C:\Users\localuser\Desktop\AutoOperateLib\AutoOperateLib\CV.cpp(440,13): warning C4996: 'SHA256_Update': Since OpenSSL 3.0
+C:\Users\localuser\Desktop\AutoOperateLib\AutoOperateLib\CV.cpp(441,13): warning C4996: 'SHA256_Final': Since OpenSSL 3.0
+C:\Users\localuser\Desktop\AutoOperateLib\AutoOperateLib\CV.cpp(471,48): warning C4267: “参数”: 从“size_t”转换到“int”，可能丢失数据
+C:\Users\localuser\Desktop\AutoOperateLib\AutoOperateLib\CV.cpp(484,31): warning C4018: “<”: 有符号/无符号不匹配
+C:\Users\localuser\Desktop\AutoOperateLib\AutoOperateLib\CV.cpp(468,17): warning C4996: 'HMAC_CTX_new': Since OpenSSL 3.0
+C:\Users\localuser\Desktop\AutoOperateLib\AutoOperateLib\CV.cpp(471,13): warning C4996: 'HMAC_Init_ex': Since OpenSSL 3.0
+C:\Users\localuser\Desktop\AutoOperateLib\AutoOperateLib\CV.cpp(472,13): warning C4996: 'HMAC_Update': Since OpenSSL 3.0
+C:\Users\localuser\Desktop\AutoOperateLib\AutoOperateLib\CV.cpp(474,13): warning C4996: 'HMAC_Final': Since OpenSSL 3.0
+C:\Users\localuser\Desktop\AutoOperateLib\AutoOperateLib\CV.cpp(479,13): warning C4996: 'HMAC_CTX_free': Since OpenSSL 3.0
+C:\Users\localuser\Desktop\AutoOperateLib\AutoOperateLib\CV.cpp(549,86): warning C4244: “参数”: 从“double”转换到“int”，可能丢失数据
+C:\Users\localuser\Desktop\AutoOperateLib\AutoOperateLib\CV.cpp(549,51): warning C4244: “参数”: 从“double”转换到“int”，可能丢失数据
+C:\Users\localuser\Desktop\AutoOperateLib\AutoOperateLib\CV.cpp(550,86): warning C4244: “参数”: 从“double”转换到“int”，可能丢失数据
+C:\Users\localuser\Desktop\AutoOperateLib\AutoOperateLib\CV.cpp(550,51): warning C4244: “参数”: 从“double”转换到“int”，可能丢失数据
+C:\Users\localuser\Desktop\AutoOperateLib\AutoOperateLib\CV.cpp(551,86): warning C4244: “参数”: 从“double”转换到“int”，可能丢失数据
+C:\Users\localuser\Desktop\AutoOperateLib\AutoOperateLib\CV.cpp(551,51): warning C4244: “参数”: 从“double”转换到“int”，可能丢失数据
+C:\Users\localuser\Desktop\AutoOperateLib\AutoOperateLib\CV.cpp(552,86): warning C4244: “参数”: 从“double”转换到“int”，可能丢失数据
+C:\Users\localuser\Desktop\AutoOperateLib\AutoOperateLib\CV.cpp(552,51): warning C4244: “参数”: 从“double”转换到“int”，可能丢失数据
+C:\Users\localuser\Desktop\AutoOperateLib\AutoOperateLib\CV.cpp(565,50): warning C4244: “参数”: 从“const double”转换到“int”，可能丢失数据
+C:\Users\localuser\Desktop\AutoOperateLib\AutoOperateLib\CV.cpp(565,44): warning C4244: “参数”: 从“const double”转换到“int”，可能丢失数据
+C:\Users\localuser\Desktop\AutoOperateLib\AutoOperateLib\CV.cpp(566,38): warning C4244: “=”: 从“double”转换到“int”，可能丢失数据
+C:\Users\localuser\Desktop\AutoOperateLib\AutoOperateLib\CV.cpp(567,39): warning C4244: “=”: 从“double”转换到“int”，可能丢失数据
+  正在生成代码...
   AutoOperateLib.vcxproj -> C:\Users\localuser\Desktop\AutoOperateLib\x64\Debug\AutoOperateLib.lib

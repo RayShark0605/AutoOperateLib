@@ -10,29 +10,44 @@ using namespace std;
 cv::Mat CaptureScreenToCvMat(const AO_Rect& rect)
 {
     const HDC hScreenDC = GetDC(NULL);
-    // 创建内存设备上下文
     const HDC hMemoryDC = CreateCompatibleDC(hScreenDC);
-
-    // 创建兼容位图
     const HBITMAP hBitmap = CreateCompatibleBitmap(hScreenDC, rect.width, rect.height);
-    // 选择位图到内存设备上下文中
     const HBITMAP hOldBitmap = (HBITMAP)SelectObject(hMemoryDC, hBitmap);
 
-    // 截取屏幕到内存设备上下文
+    // 将屏幕数据复制到内存设备上下文中
     BitBlt(hMemoryDC, 0, 0, rect.width, rect.height, hScreenDC, rect.leftTop.x, rect.leftTop.y, SRCCOPY);
 
-    // 创建位图信息头
+    // 设置位图信息
     BITMAPINFOHEADER bmi = { 0 };
     bmi.biSize = sizeof(BITMAPINFOHEADER);
     bmi.biWidth = rect.width;
-    bmi.biHeight = -rect.height;  // 负高度表示将图像翻转过来
+    bmi.biHeight = -rect.height;  // 正常方向
     bmi.biPlanes = 1;
-    bmi.biBitCount = 24;  // 24位色深
+    bmi.biBitCount = 24;  // 24位RGB色
     bmi.biCompression = BI_RGB;
 
-    // 创建cv::Mat并从位图中获取数据
+    // 为了避免数据对齐问题，我们使用临时的缓冲区来存储位图数据
+    const int stride = ((rect.width * 3 + 3) & ~3);  // 行的字节数，4字节对齐
+    vector<uchar> buffer(stride * rect.height);
+
+    // 从内存设备上下文中获取位图数据
+    GetDIBits(hMemoryDC, hBitmap, 0, rect.height, buffer.data(), (BITMAPINFO*)&bmi, DIB_RGB_COLORS);
+
+    // 创建cv::Mat，并将数据从缓冲区复制到mat中
     cv::Mat mat(rect.height, rect.width, CV_8UC3);
-    GetDIBits(hMemoryDC, hBitmap, 0, rect.height, mat.data, (BITMAPINFO*)&bmi, DIB_RGB_COLORS);
+
+    // 复制数据，并进行RGB到BGR的转换
+    for (int y = 0; y < rect.height; y++)
+    {
+        const uchar* srcRow = buffer.data() + y * stride;
+        uchar* dstRow = mat.ptr<uchar>(y);
+        for (int x = 0; x < rect.width; ++x)
+        {
+            dstRow[x * 3 + 2] = srcRow[x * 3 + 2];
+            dstRow[x * 3 + 1] = srcRow[x * 3 + 1];
+            dstRow[x * 3 + 0] = srcRow[x * 3 + 0];
+        }
+    }
 
     // 释放资源
     SelectObject(hMemoryDC, hOldBitmap);
@@ -175,7 +190,6 @@ namespace AO_OCR
         string MatToBase64(const cv::Mat& image, bool isURLEncoded = false, const string& imageFormat = ".png")
         {
             vector<unsigned char> buf;
-            cv::imwrite("1.png", image);
             cv::imencode(imageFormat, image, buf);  // 将cv::Mat编码为二进制数据
 
             // 将二进制数据进行Base64编码

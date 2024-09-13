@@ -2127,7 +2127,443 @@ vector<string> GetAllFilesPath(const string& dirPath, const vector<string>& exte
     return filesPath;
 }
 
+namespace drawRectangleOnScreenNameSpace
+{
+    // 全局变量，用于保存钩子的句柄以及传递矩形信息和实心/空心状态
+    HHOOK drawRectangleHook = NULL;
+    AO_Rect drawRectangleGlobalRect;
+    bool drawRectangleGlobalIsSolid = false;
+}
+// 绘制矩形的函数，依据 isSolid 决定是否填充
+void DrawRectangle(HDC hdc, const AO_Rect& rect, bool isSolid)
+{
+    // 根据 isSolid 参数来选择是否填充矩形
+    HBRUSH hBrush = NULL;
+    if (isSolid)
+    {
+        // 创建红色实心画刷
+        hBrush = CreateSolidBrush(RGB(255, 0, 0));
+    }
+    else
+    {
+        // 如果是空心矩形，使用 NULL_BRUSH 不进行填充
+        hBrush = (HBRUSH)GetStockObject(NULL_BRUSH);
+    }
 
+    // 创建红色画笔用于绘制矩形边框
+    HPEN redPen = CreatePen(PS_SOLID, 3, RGB(255, 0, 0));  // 3 是线条宽度
+    HPEN oldPen = (HPEN)SelectObject(hdc, redPen);
+
+    // 设置当前画刷
+    HBRUSH oldBrush = (HBRUSH)SelectObject(hdc, hBrush);
+
+    // 绘制矩形
+    Rectangle(hdc, rect.leftTop.x, rect.leftTop.y, rect.rightBottom.x, rect.rightBottom.y);
+
+    // 恢复设备上下文的原始画刷和画笔
+    SelectObject(hdc, oldPen);
+    SelectObject(hdc, oldBrush);
+
+    // 释放资源
+    DeleteObject(redPen);
+    if (isSolid)
+    {
+        DeleteObject(hBrush);
+    }
+}
+// 钩子回调函数，用于监控窗口消息
+LRESULT CALLBACK HookCallback(int nCode, WPARAM wParam, LPARAM lParam)
+{
+    if (nCode >= 0)
+    {
+        // 监听所有窗口移动、更新、重绘相关的事件
+        if (wParam == WM_PAINT || wParam == WM_WINDOWPOSCHANGED || wParam == WM_MOVE || wParam == WM_SIZE)
+        {
+            HDC hdc = GetDC(NULL);
+            // 重新绘制矩形，使用传入的动态参数
+            DrawRectangle(hdc, drawRectangleOnScreenNameSpace::drawRectangleGlobalRect, drawRectangleOnScreenNameSpace::drawRectangleGlobalIsSolid);
+            ReleaseDC(NULL, hdc);
+        }
+    }
+    return CallNextHookEx(drawRectangleOnScreenNameSpace::drawRectangleHook, nCode, wParam, lParam);
+}
+void DrawRectangleOnScreen(const AO_Rect& rect, size_t durationMS, bool isSolid)
+{
+    // 将传入的矩形参数和 isSolid 参数保存到全局变量中
+    drawRectangleOnScreenNameSpace::drawRectangleGlobalRect = rect;
+    drawRectangleOnScreenNameSpace::drawRectangleGlobalIsSolid = isSolid;
+
+    // 创建一个异步线程来处理矩形绘制和定期重绘
+    thread([rect, isSolid, durationMS](){
+        HDC hdc = GetDC(NULL);
+        auto startTime = chrono::high_resolution_clock::now();
+
+        // 安装一个全局钩子，用于监控窗口消息
+        drawRectangleOnScreenNameSpace::drawRectangleHook = SetWindowsHookEx(WH_GETMESSAGE, HookCallback, NULL, GetCurrentThreadId());
+
+        // 每100毫秒重绘一次，直到持续时间达到
+        while (true)
+        {
+            // 获取当前时间
+            auto currentTime = chrono::high_resolution_clock::now();
+            auto elapsedMS = chrono::duration_cast<chrono::milliseconds>(currentTime - startTime).count();
+
+            // 如果持续时间超过指定的durationMS，退出循环
+            if (elapsedMS >= durationMS)
+            {
+                break;
+            }
+
+            // 重绘矩形，根据 isSolid 参数选择绘制方式
+            DrawRectangle(hdc, rect, isSolid);
+
+            // 暂停50毫秒后再次重绘
+            this_thread::sleep_for(chrono::milliseconds(50));
+        }
+        InvalidateRect(NULL, NULL, TRUE); // 清除矩形，强制屏幕重绘
+        ReleaseDC(NULL, hdc);  // 释放设备上下文
+        // 移除钩子
+        UnhookWindowsHookEx(drawRectangleOnScreenNameSpace::drawRectangleHook);
+        }).detach();  // 将线程分离，异步运行
+}
+
+AO_Color AO_Color::Black = AO_Color(0, 0, 0);
+AO_Color AO_Color::White = AO_Color(255, 255, 255);
+AO_Color AO_Color::Red = AO_Color(255, 0, 0);
+AO_Color AO_Color::Green = AO_Color(0, 255, 0);
+AO_Color AO_Color::Blue = AO_Color(0, 0, 255);
+AO_Color::AO_Color() :r(0), g(0), b(0) {}
+AO_Color::AO_Color(unsigned char r, unsigned char g, unsigned char b) :r(r), g(g), b(b) {}
+double AO_Color::CalculteSimilarity(const AO_Color& targetColor) const
+{
+    const double distance = sqrt(pow(r - targetColor.r, 2) + pow(g - targetColor.g, 2) + pow(b - targetColor.b, 2));
+    const static double maxDistance = sqrt(255.0 * 255.0 * 3);
+    return 1.0 - (distance / maxDistance);  // 返回相似度，1为完全相同，0为完全不同
+}
+double AO_Color::CalculteSimilarity(const AO_Color& color1, const AO_Color& color2)
+{
+    return color1.CalculteSimilarity(color2);
+}
+
+AO_Color GetScreenPixelColor(int x, int y)
+{
+    if (x < 0 || y < 0)
+    {
+        return AO_Color();
+    }
+    // 获取屏幕设备上下文 (DC)
+    HDC hdcScreen = GetDC(NULL);
+    if (hdcScreen == NULL)
+    {
+        // 返回一个默认的黑色 AO_Color（所有通道为0）
+        return AO_Color();
+    }
+
+    // 获取指定坐标的像素颜色
+    COLORREF color = GetPixel(hdcScreen, x, y);
+
+    // 如果 GetPixel 返回 CLR_INVALID，表示获取失败
+    if (color == CLR_INVALID)
+    {
+        ReleaseDC(NULL, hdcScreen);
+        return AO_Color(); // 返回默认颜色
+    }
+
+    // 提取 RGB 颜色分量
+    unsigned char red = GetRValue(color);
+    unsigned char green = GetGValue(color);
+    unsigned char blue = GetBValue(color);
+
+    // 释放设备上下文
+    ReleaseDC(NULL, hdcScreen);
+
+    // 返回颜色
+    return AO_Color(red, green, blue);
+}
+AO_Color GetScreenPixelColor(const AO_Point& point)
+{
+    return GetScreenPixelColor(point.x, point.y);
+}
+
+bool ScreenFindColor(const AO_Color& targetColor, AO_Point& position, double similarity)
+{
+    if (similarity > 1)
+    {
+        return false;
+    }
+    position = AO_Point(0, 0);
+    if (similarity <= 0)
+    {
+        return true;
+    }
+
+    // 获取屏幕大小
+    const HDC hScreenDC = GetDC(NULL);
+    const int screenWidth = GetSystemMetrics(SM_CXSCREEN);
+    const int screenHeight = GetSystemMetrics(SM_CYSCREEN);
+
+    // 创建一个兼容的内存设备上下文
+    const HDC hMemoryDC = CreateCompatibleDC(hScreenDC);
+    const HBITMAP hBitmap = CreateCompatibleBitmap(hScreenDC, screenWidth, screenHeight);
+    SelectObject(hMemoryDC, hBitmap);
+
+    // 将屏幕图像复制到内存设备上下文
+    BitBlt(hMemoryDC, 0, 0, screenWidth, screenHeight, hScreenDC, 0, 0, SRCCOPY);
+
+    // 锁定位图数据
+    BITMAPINFOHEADER bi = { 0 };
+    bi.biSize = sizeof(BITMAPINFOHEADER);
+    bi.biWidth = screenWidth;
+    bi.biHeight = -screenHeight; // 使用负值表示自上而下的位图
+    bi.biPlanes = 1;
+    bi.biBitCount = 24; // 每个像素24位
+    bi.biCompression = BI_RGB;
+
+    // 存储屏幕像素
+    const int imageSize = screenWidth * screenHeight * 3; // 每个像素3字节(RGB)
+    unsigned char* imageData = new unsigned char[imageSize];
+    GetDIBits(hMemoryDC, hBitmap, 0, screenHeight, imageData, (BITMAPINFO*)&bi, DIB_RGB_COLORS);
+
+    // 遍历像素
+    double maxSimilarity = 0.0;
+    AO_Point bestPosition;
+    for (int y = 0; y < screenHeight; y++)
+    {
+        for (int x = 0; x < screenWidth; x++)
+        {
+            // 获取当前像素的颜色
+            const int index = (y * screenWidth + x) * 3;
+            const AO_Color currentColor(imageData[index + 2], imageData[index + 1], imageData[index]);
+
+            // 计算颜色相似度
+            const double currentSimilarity = targetColor.CalculteSimilarity(currentColor);
+            if (currentSimilarity > maxSimilarity)
+            {
+                maxSimilarity = currentSimilarity;
+                bestPosition = AO_Point(x, y);
+            }
+        }
+    }
+
+    // 如果相似度超过设定阈值，则认为找到了相似的颜色
+    if (maxSimilarity >= similarity)
+    {
+        position = bestPosition;
+        delete[] imageData;
+        DeleteObject(hBitmap);
+        DeleteDC(hMemoryDC);
+        ReleaseDC(NULL, hScreenDC);
+        return true;
+    }
+
+
+    // 清理资源
+    delete[] imageData;
+    DeleteObject(hBitmap);
+    DeleteDC(hMemoryDC);
+    ReleaseDC(NULL, hScreenDC);
+    return false;
+}
+vector<AO_Point> ScreenFindColor(const AO_Color& targetColor, double similarity)
+{
+    if (similarity > 1)
+    {
+        return {};
+    }
+
+    // 获取屏幕大小
+    const HDC hScreenDC = GetDC(NULL);
+    const int screenWidth = GetSystemMetrics(SM_CXSCREEN);
+    const int screenHeight = GetSystemMetrics(SM_CYSCREEN);
+
+    // 创建一个兼容的内存设备上下文
+    const HDC hMemoryDC = CreateCompatibleDC(hScreenDC);
+    const HBITMAP hBitmap = CreateCompatibleBitmap(hScreenDC, screenWidth, screenHeight);
+    SelectObject(hMemoryDC, hBitmap);
+
+    // 将屏幕图像复制到内存设备上下文
+    BitBlt(hMemoryDC, 0, 0, screenWidth, screenHeight, hScreenDC, 0, 0, SRCCOPY);
+
+    // 锁定位图数据
+    BITMAPINFOHEADER bi = { 0 };
+    bi.biSize = sizeof(BITMAPINFOHEADER);
+    bi.biWidth = screenWidth;
+    bi.biHeight = -screenHeight; // 使用负值表示自上而下的位图
+    bi.biPlanes = 1;
+    bi.biBitCount = 24; // 每个像素24位
+    bi.biCompression = BI_RGB;
+
+    // 存储屏幕像素
+    const int imageSize = screenWidth * screenHeight * 3; // 每个像素3字节(RGB)
+    unsigned char* imageData = new unsigned char[imageSize];
+    GetDIBits(hMemoryDC, hBitmap, 0, screenHeight, imageData, (BITMAPINFO*)&bi, DIB_RGB_COLORS);
+
+    vector<AO_Point> result;
+    result.reserve(screenHeight * screenWidth);
+    // 遍历像素
+    for (int y = 0; y < screenHeight; y++)
+    {
+        for (int x = 0; x < screenWidth; x++)
+        {
+            // 获取当前像素的颜色
+            const int index = (y * screenWidth + x) * 3;
+            const AO_Color currentColor(imageData[index + 2], imageData[index + 1], imageData[index]);
+
+            // 计算颜色相似度
+            const double currentSimilarity = targetColor.CalculteSimilarity(currentColor);
+            if (currentSimilarity >= similarity)
+            {
+                result.push_back(AO_Point(x, y));
+            }
+        }
+    }
+    result.shrink_to_fit();
+    delete[] imageData;
+    DeleteObject(hBitmap);
+    DeleteDC(hMemoryDC);
+    ReleaseDC(NULL, hScreenDC);
+    return result;
+}
+bool ScreenFindColor(const AO_Color& targetColor, const AO_Rect& rect, AO_Point& position, double similarity)
+{
+    if (similarity > 1)
+    {
+        return false;
+    }
+
+    position = AO_Point(0, 0);
+    if (similarity <= 0)
+    {
+        return true;
+    }
+
+    // 获取屏幕DC
+    const HDC hScreenDC = GetDC(NULL);
+    const int rectWidth = rect.width;
+    const int rectHeight = rect.height;
+
+    // 创建一个兼容的内存设备上下文
+    const HDC hMemoryDC = CreateCompatibleDC(hScreenDC);
+    const HBITMAP hBitmap = CreateCompatibleBitmap(hScreenDC, rectWidth, rectHeight);
+    SelectObject(hMemoryDC, hBitmap);
+
+    // 将屏幕区域图像复制到内存设备上下文
+    BitBlt(hMemoryDC, 0, 0, rectWidth, rectHeight, hScreenDC, rect.leftTop.x, rect.leftTop.y, SRCCOPY);
+
+    // 锁定位图数据
+    BITMAPINFOHEADER bi = { 0 };
+    bi.biSize = sizeof(BITMAPINFOHEADER);
+    bi.biWidth = rectWidth;
+    bi.biHeight = -rectHeight; // 使用负值表示自上而下的位图
+    bi.biPlanes = 1;
+    bi.biBitCount = 24; // 每个像素24位
+    bi.biCompression = BI_RGB;
+
+    // 存储屏幕区域像素
+    const int imageSize = rectWidth * rectHeight * 3; // 每个像素3字节(RGB)
+    unsigned char* imageData = new unsigned char[imageSize];
+    GetDIBits(hMemoryDC, hBitmap, 0, rectHeight, imageData, (BITMAPINFO*)&bi, DIB_RGB_COLORS);
+
+    // 遍历像素
+    double maxSimilarity = 0.0;
+    AO_Point bestPosition;
+    for (int y = 0; y < rectHeight; y++)
+    {
+        for (int x = 0; x < rectWidth; x++)
+        {
+            // 获取当前像素的颜色
+            const int index = (y * rectWidth + x) * 3;
+            const AO_Color currentColor(imageData[index + 2], imageData[index + 1], imageData[index]);
+
+            // 计算颜色相似度
+            const double currentSimilarity = targetColor.CalculteSimilarity(currentColor);
+            if (currentSimilarity > maxSimilarity)
+            {
+                maxSimilarity = currentSimilarity;
+                bestPosition = AO_Point(rect.leftTop.x + x, rect.leftTop.y + y); // 相对于整个屏幕的坐标
+            }
+        }
+    }
+
+    // 如果相似度超过设定阈值，则认为找到了相似的颜色
+    if (maxSimilarity >= similarity)
+    {
+        position = bestPosition;
+        delete[] imageData;
+        DeleteObject(hBitmap);
+        DeleteDC(hMemoryDC);
+        ReleaseDC(NULL, hScreenDC);
+        return true;
+    }
+
+    // 清理资源
+    delete[] imageData;
+    DeleteObject(hBitmap);
+    DeleteDC(hMemoryDC);
+    ReleaseDC(NULL, hScreenDC);
+    return false;
+}
+vector<AO_Point> ScreenFindColor(const AO_Color& targetColor, const AO_Rect& rect, double similarity)
+{
+    if (similarity > 1)
+    {
+        return {};
+    }
+
+    // 获取屏幕DC
+    const HDC hScreenDC = GetDC(NULL);
+    const int rectWidth = rect.width;
+    const int rectHeight = rect.height;
+
+    // 创建一个兼容的内存设备上下文
+    const HDC hMemoryDC = CreateCompatibleDC(hScreenDC);
+    const HBITMAP hBitmap = CreateCompatibleBitmap(hScreenDC, rectWidth, rectHeight);
+    SelectObject(hMemoryDC, hBitmap);
+
+    // 将屏幕区域图像复制到内存设备上下文
+    BitBlt(hMemoryDC, 0, 0, rectWidth, rectHeight, hScreenDC, rect.leftTop.x, rect.leftTop.y, SRCCOPY);
+
+    // 锁定位图数据
+    BITMAPINFOHEADER bi = { 0 };
+    bi.biSize = sizeof(BITMAPINFOHEADER);
+    bi.biWidth = rectWidth;
+    bi.biHeight = -rectHeight; // 使用负值表示自上而下的位图
+    bi.biPlanes = 1;
+    bi.biBitCount = 24; // 每个像素24位
+    bi.biCompression = BI_RGB;
+
+    // 存储屏幕区域像素
+    const int imageSize = rectWidth * rectHeight * 3; // 每个像素3字节(RGB)
+    unsigned char* imageData = new unsigned char[imageSize];
+    GetDIBits(hMemoryDC, hBitmap, 0, rectHeight, imageData, (BITMAPINFO*)&bi, DIB_RGB_COLORS);
+
+    vector<AO_Point> result;
+    result.reserve(rectWidth * rectHeight);
+    // 遍历像素
+    for (int y = 0; y < rectHeight; y++)
+    {
+        for (int x = 0; x < rectWidth; x++)
+        {
+            // 获取当前像素的颜色
+            const int index = (y * rectWidth + x) * 3;
+            const AO_Color currentColor(imageData[index + 2], imageData[index + 1], imageData[index]);
+            const double currentSimilarity = targetColor.CalculteSimilarity(currentColor);
+
+            if (currentSimilarity >= similarity)
+            {
+                result.push_back(AO_Point(rect.leftTop.x + x, rect.leftTop.y + y));
+            }
+        }
+    }
+    result.shrink_to_fit();
+
+    // 清理资源
+    delete[] imageData;
+    DeleteObject(hBitmap);
+    DeleteDC(hMemoryDC);
+    ReleaseDC(NULL, hScreenDC);
+    return result;
+}
 
 
 
