@@ -17,6 +17,11 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "WindowShift", "SampleApps\W
 		{015DA2EA-8ED3-4A05-AF2E-4FDE4DB7C2C2} = {015DA2EA-8ED3-4A05-AF2E-4FDE4DB7C2C2}
 	EndProjectSection
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "QMouseClicker", "SampleApps\QMouseClicker\QMouseClicker.vcxproj", "{4B3CAD2B-96E4-43DA-A6DA-A2BCB3B325B4}"
+	ProjectSection(ProjectDependencies) = postProject
+		{015DA2EA-8ED3-4A05-AF2E-4FDE4DB7C2C2} = {015DA2EA-8ED3-4A05-AF2E-4FDE4DB7C2C2}
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
@@ -49,12 +54,21 @@ Global
 		{2E77B151-7A4E-4AD3-B2AF-080816491B29}.Release|x64.Build.0 = Release|x64
 		{2E77B151-7A4E-4AD3-B2AF-080816491B29}.Release|x86.ActiveCfg = Release|Win32
 		{2E77B151-7A4E-4AD3-B2AF-080816491B29}.Release|x86.Build.0 = Release|Win32
+		{4B3CAD2B-96E4-43DA-A6DA-A2BCB3B325B4}.Debug|x64.ActiveCfg = Debug|x64
+		{4B3CAD2B-96E4-43DA-A6DA-A2BCB3B325B4}.Debug|x64.Build.0 = Debug|x64
+		{4B3CAD2B-96E4-43DA-A6DA-A2BCB3B325B4}.Debug|x86.ActiveCfg = Debug|x64
+		{4B3CAD2B-96E4-43DA-A6DA-A2BCB3B325B4}.Debug|x86.Build.0 = Debug|x64
+		{4B3CAD2B-96E4-43DA-A6DA-A2BCB3B325B4}.Release|x64.ActiveCfg = Release|x64
+		{4B3CAD2B-96E4-43DA-A6DA-A2BCB3B325B4}.Release|x64.Build.0 = Release|x64
+		{4B3CAD2B-96E4-43DA-A6DA-A2BCB3B325B4}.Release|x86.ActiveCfg = Release|x64
+		{4B3CAD2B-96E4-43DA-A6DA-A2BCB3B325B4}.Release|x86.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{2E77B151-7A4E-4AD3-B2AF-080816491B29} = {A360BED8-1799-4BEE-A04B-6147AEBF6DB9}
+		{4B3CAD2B-96E4-43DA-A6DA-A2BCB3B325B4} = {A360BED8-1799-4BEE-A04B-6147AEBF6DB9}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {8C2AABEC-C066-475D-B8BC-94469B45E5CC}

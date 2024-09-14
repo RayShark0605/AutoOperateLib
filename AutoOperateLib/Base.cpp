@@ -372,9 +372,16 @@ AO_HotkeyManager::AO_HotkeyManager()
 AO_HotkeyManager::~AO_HotkeyManager()
 {
     isRunning = false;
-    for (const auto& pair : hotkeys)
     {
-        UnregisterHotkey(pair.first);
+        lock_guard<mutex> lock(mtx);
+        for (auto it = hotkeys.begin(); it != hotkeys.end();)
+        {
+            it = hotkeys.erase(it);
+        }
+        for (auto it = callbacks.begin(); it != callbacks.end();)
+        {
+            it = callbacks.erase(it);
+        }
     }
     if (processThread.joinable())
     {

@@ -124,7 +124,7 @@ enum AO_ModifierKey : BYTE
     RIGHTWIN = VK_RWIN,         // 右Windows键
 };
 
-// 快捷键（热键）管理器
+// 快捷键（热键）管理器。注意：AO_HotkeyManager的构造和RegisterHotkey必须在同一个线程中！
 // 使用示例：添加Ctrl+Shift+Q快捷键，弹出一个窗口
 //  AO_HotkeyManager s;
 //  s.RegisterHotkey(1, MOD_CONTROL | MOD_SHIFT, 'Q', []() {

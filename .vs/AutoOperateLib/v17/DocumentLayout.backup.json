@@ -3,20 +3,24 @@
   "WorkspaceRootPath": "C:\\Users\\localuser\\Desktop\\AutoOperateLib\\",
   "Documents": [
     {
-      "AbsoluteMoniker": "D:0:0:{F143DD33-44F1-4314-8705-C0FE967B86CF}|Test\\Test.vcxproj|C:\\Users\\localuser\\Desktop\\AutoOperateLib\\Test\\Test.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
-      "RelativeMoniker": "D:0:0:{F143DD33-44F1-4314-8705-C0FE967B86CF}|Test\\Test.vcxproj|solutionrelative:Test\\Test.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
+      "AbsoluteMoniker": "D:0:0:{4B3CAD2B-96E4-43DA-A6DA-A2BCB3B325B4}|SampleApps\\QMouseClicker\\QMouseClicker.vcxproj|C:\\Users\\localuser\\Desktop\\AutoOperateLib\\SampleApps\\QMouseClicker\\MainWindow.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
+      "RelativeMoniker": "D:0:0:{4B3CAD2B-96E4-43DA-A6DA-A2BCB3B325B4}|SampleApps\\QMouseClicker\\QMouseClicker.vcxproj|solutionrelative:SampleApps\\QMouseClicker\\MainWindow.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{4B3CAD2B-96E4-43DA-A6DA-A2BCB3B325B4}|SampleApps\\QMouseClicker\\QMouseClicker.vcxproj|C:\\Users\\localuser\\Desktop\\AutoOperateLib\\SampleApps\\QMouseClicker\\MainWindow.h||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
+      "RelativeMoniker": "D:0:0:{4B3CAD2B-96E4-43DA-A6DA-A2BCB3B325B4}|SampleApps\\QMouseClicker\\QMouseClicker.vcxproj|solutionrelative:SampleApps\\QMouseClicker\\MainWindow.h||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{4B3CAD2B-96E4-43DA-A6DA-A2BCB3B325B4}|SampleApps\\QMouseClicker\\QMouseClicker.vcxproj|C:\\Users\\localuser\\Desktop\\AutoOperateLib\\SampleApps\\QMouseClicker\\main.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
+      "RelativeMoniker": "D:0:0:{4B3CAD2B-96E4-43DA-A6DA-A2BCB3B325B4}|SampleApps\\QMouseClicker\\QMouseClicker.vcxproj|solutionrelative:SampleApps\\QMouseClicker\\main.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
     },
     {
       "AbsoluteMoniker": "D:0:0:{015DA2EA-8ED3-4A05-AF2E-4FDE4DB7C2C2}|AutoOperateLib\\AutoOperateLib.vcxproj|C:\\Users\\localuser\\Desktop\\AutoOperateLib\\AutoOperateLib\\Base.h||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
       "RelativeMoniker": "D:0:0:{015DA2EA-8ED3-4A05-AF2E-4FDE4DB7C2C2}|AutoOperateLib\\AutoOperateLib.vcxproj|solutionrelative:AutoOperateLib\\Base.h||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{015DA2EA-8ED3-4A05-AF2E-4FDE4DB7C2C2}|AutoOperateLib\\AutoOperateLib.vcxproj|C:\\Users\\localuser\\Desktop\\AutoOperateLib\\AutoOperateLib\\Base.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
-      "RelativeMoniker": "D:0:0:{015DA2EA-8ED3-4A05-AF2E-4FDE4DB7C2C2}|AutoOperateLib\\AutoOperateLib.vcxproj|solutionrelative:AutoOperateLib\\Base.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{015DA2EA-8ED3-4A05-AF2E-4FDE4DB7C2C2}|AutoOperateLib\\AutoOperateLib.vcxproj|C:\\Users\\localuser\\Desktop\\AutoOperateLib\\AutoOperateLib\\CV.h||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
-      "RelativeMoniker": "D:0:0:{015DA2EA-8ED3-4A05-AF2E-4FDE4DB7C2C2}|AutoOperateLib\\AutoOperateLib.vcxproj|solutionrelative:AutoOperateLib\\CV.h||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
+      "AbsoluteMoniker": "D:0:0:{F143DD33-44F1-4314-8705-C0FE967B86CF}|Test\\Test.vcxproj|C:\\Users\\localuser\\Desktop\\AutoOperateLib\\Test\\Test.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
+      "RelativeMoniker": "D:0:0:{F143DD33-44F1-4314-8705-C0FE967B86CF}|Test\\Test.vcxproj|solutionrelative:Test\\Test.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
     }
   ],
   "DocumentGroupContainers": [
@@ -26,7 +30,7 @@
       "DocumentGroups": [
         {
           "DockedWidth": 121,
-          "SelectedChildIndex": 2,
+          "SelectedChildIndex": 1,
           "Children": [
             {
               "$type": "Bookmark",
@@ -34,29 +38,28 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 3,
-              "Title": "CV.h",
-              "DocumentMoniker": "C:\\Users\\localuser\\Desktop\\AutoOperateLib\\AutoOperateLib\\CV.h",
-              "RelativeDocumentMoniker": "AutoOperateLib\\CV.h",
-              "ToolTip": "C:\\Users\\localuser\\Desktop\\AutoOperateLib\\AutoOperateLib\\CV.h",
-              "RelativeToolTip": "AutoOperateLib\\CV.h",
-              "ViewState": "AgIAAIwAAAAAAAAAAAAAAA0AAAAHAAAAAAAAAA==",
+              "DocumentIndex": 1,
+              "Title": "MainWindow.h",
+              "DocumentMoniker": "C:\\Users\\localuser\\Desktop\\AutoOperateLib\\SampleApps\\QMouseClicker\\MainWindow.h",
+              "RelativeDocumentMoniker": "SampleApps\\QMouseClicker\\MainWindow.h",
+              "ToolTip": "C:\\Users\\localuser\\Desktop\\AutoOperateLib\\SampleApps\\QMouseClicker\\MainWindow.h",
+              "RelativeToolTip": "SampleApps\\QMouseClicker\\MainWindow.h",
+              "ViewState": "AgIAAAMAAAAAAAAAAAAIwCIAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000680|",
-              "WhenOpened": "2024-09-09T08:49:59.275Z",
+              "WhenOpened": "2024-09-14T01:38:16.845Z",
               "EditorCaption": ""
             },
             {
               "$type": "Document",
-              "DocumentIndex": 1,
+              "DocumentIndex": 3,
               "Title": "Base.h",
               "DocumentMoniker": "C:\\Users\\localuser\\Desktop\\AutoOperateLib\\AutoOperateLib\\Base.h",
               "RelativeDocumentMoniker": "AutoOperateLib\\Base.h",
               "ToolTip": "C:\\Users\\localuser\\Desktop\\AutoOperateLib\\AutoOperateLib\\Base.h",
               "RelativeToolTip": "AutoOperateLib\\Base.h",
-              "ViewState": "AgIAAB0CAAAAAAAAAAAAADkCAAAMAAAAAAAAAA==",
+              "ViewState": "AgIAABwCAAAAAAAAAAAAACwCAAAcAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000680|",
-              "WhenOpened": "2024-09-09T08:50:54.804Z",
-              "EditorCaption": ""
+              "WhenOpened": "2024-09-14T05:37:07.032Z"
             }
           ]
         },
@@ -67,28 +70,39 @@
             {
               "$type": "Document",
               "DocumentIndex": 2,
-              "Title": "Base.cpp",
-              "DocumentMoniker": "C:\\Users\\localuser\\Desktop\\AutoOperateLib\\AutoOperateLib\\Base.cpp",
-              "RelativeDocumentMoniker": "AutoOperateLib\\Base.cpp",
-              "ToolTip": "C:\\Users\\localuser\\Desktop\\AutoOperateLib\\AutoOperateLib\\Base.cpp",
-              "RelativeToolTip": "AutoOperateLib\\Base.cpp",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAADgAAAADAAAAAAAAAA==",
+              "Title": "main.cpp",
+              "DocumentMoniker": "C:\\Users\\localuser\\Desktop\\AutoOperateLib\\SampleApps\\QMouseClicker\\main.cpp",
+              "RelativeDocumentMoniker": "SampleApps\\QMouseClicker\\main.cpp",
+              "ToolTip": "C:\\Users\\localuser\\Desktop\\AutoOperateLib\\SampleApps\\QMouseClicker\\main.cpp",
+              "RelativeToolTip": "SampleApps\\QMouseClicker\\main.cpp",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAABMAAAABAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000677|",
-              "WhenOpened": "2024-09-13T02:32:50.082Z",
-              "EditorCaption": ""
+              "WhenOpened": "2024-09-14T02:13:44.345Z"
             },
             {
               "$type": "Document",
               "DocumentIndex": 0,
+              "Title": "MainWindow.cpp",
+              "DocumentMoniker": "C:\\Users\\localuser\\Desktop\\AutoOperateLib\\SampleApps\\QMouseClicker\\MainWindow.cpp",
+              "RelativeDocumentMoniker": "SampleApps\\QMouseClicker\\MainWindow.cpp",
+              "ToolTip": "C:\\Users\\localuser\\Desktop\\AutoOperateLib\\SampleApps\\QMouseClicker\\MainWindow.cpp",
+              "RelativeToolTip": "SampleApps\\QMouseClicker\\MainWindow.cpp",
+              "ViewState": "AgIAAFoAAAAAAAAAAAAAAHIAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000677|",
+              "WhenOpened": "2024-09-14T01:39:41.108Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 4,
               "Title": "Test.cpp",
               "DocumentMoniker": "C:\\Users\\localuser\\Desktop\\AutoOperateLib\\Test\\Test.cpp",
               "RelativeDocumentMoniker": "Test\\Test.cpp",
               "ToolTip": "C:\\Users\\localuser\\Desktop\\AutoOperateLib\\Test\\Test.cpp",
               "RelativeToolTip": "Test\\Test.cpp",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAsAAAAWAAAAAAAAAA==",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAkAAAAQAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000677|",
-              "WhenOpened": "2024-09-12T07:18:06.774Z",
-              "EditorCaption": ""
+              "WhenOpened": "2024-09-12T07:18:06.774Z"
             }
           ]
         }
