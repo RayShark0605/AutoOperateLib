@@ -135,12 +135,12 @@ int main(int argc, char* argv[])
 	{
 		return 0;
 	}
+	AO_HotkeyManager hotkeyManager;
 
 	currentProcessName = GetCurrentProcessName(false);
 
 	SetConsoleCtrlHandler(ConsoleHandler, TRUE);
 
-	AO_HotkeyManager hotkeyManager;
 	hotkeyManager.RegisterHotkey(1, MOD_ALT, '1', []()
 		{
 			Alt1Func();

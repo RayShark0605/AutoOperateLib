@@ -1,14 +1,11 @@
 ﻿  Base.cpp
   CV.cpp
-C:\Users\localuser\Desktop\AutoOperateLib\AutoOperateLib\Base.cpp(426,63): warning C4244: “参数”: 从“WPARAM”转换到“const _Kty”，可能丢失数据
-C:\Users\localuser\Desktop\AutoOperateLib\AutoOperateLib\Base.cpp(426,63): warning C4244:         with
-C:\Users\localuser\Desktop\AutoOperateLib\AutoOperateLib\Base.cpp(426,63): warning C4244:         [
-C:\Users\localuser\Desktop\AutoOperateLib\AutoOperateLib\Base.cpp(426,63): warning C4244:             _Kty=int
-C:\Users\localuser\Desktop\AutoOperateLib\AutoOperateLib\Base.cpp(426,63): warning C4244:         ]
-C:\Users\localuser\Desktop\AutoOperateLib\AutoOperateLib\Base.cpp(428,30): warning C4244: “参数”: 从“WPARAM”转换到“int”，可能丢失数据
-C:\Users\localuser\Desktop\AutoOperateLib\AutoOperateLib\Base.cpp(1138,42): warning C4244: “参数”: 从“const DWORD”转换到“BYTE”，可能丢失数据
-C:\Users\localuser\Desktop\AutoOperateLib\AutoOperateLib\Base.cpp(1141,40): warning C4244: “参数”: 从“const DWORD”转换到“BYTE”，可能丢失数据
-C:\Users\localuser\Desktop\AutoOperateLib\AutoOperateLib\Base.cpp(2219,27): warning C4018: “>=”: 有符号/无符号不匹配
+C:\Users\localuser\Desktop\AutoOperateLib\AutoOperateLib\Base.cpp(410,63): warning C4244: “参数”: 从“WPARAM”转换到“const int”，可能丢失数据
+C:\Users\localuser\Desktop\AutoOperateLib\AutoOperateLib\Base.cpp(410,107): warning C4244: “参数”: 从“WPARAM”转换到“int”，可能丢失数据
+C:\Users\localuser\Desktop\AutoOperateLib\AutoOperateLib\Base.cpp(412,30): warning C4244: “参数”: 从“WPARAM”转换到“int”，可能丢失数据
+C:\Users\localuser\Desktop\AutoOperateLib\AutoOperateLib\Base.cpp(1118,42): warning C4244: “参数”: 从“const DWORD”转换到“BYTE”，可能丢失数据
+C:\Users\localuser\Desktop\AutoOperateLib\AutoOperateLib\Base.cpp(1121,40): warning C4244: “参数”: 从“const DWORD”转换到“BYTE”，可能丢失数据
+C:\Users\localuser\Desktop\AutoOperateLib\AutoOperateLib\Base.cpp(2199,27): warning C4018: “>=”: 有符号/无符号不匹配
 C:\Users\localuser\Desktop\AutoOperateLib\AutoOperateLib\CV.cpp(196,68): warning C4267: “参数”: 从“size_t”转换到“unsigned int”，可能丢失数据
 C:\Users\localuser\Desktop\AutoOperateLib\AutoOperateLib\CV.cpp(201,92): warning C4267: “参数”: 从“size_t”转换到“int”，可能丢失数据
 C:\Users\localuser\Desktop\AutoOperateLib\AutoOperateLib\CV.cpp(211,78): warning C4267: “参数”: 从“size_t”转换到“int”，可能丢失数据

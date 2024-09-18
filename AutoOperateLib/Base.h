@@ -7,6 +7,7 @@
 #include <condition_variable>
 #include <functional>
 #include <unordered_map>
+#include <concurrent_unordered_map.h>
 
 std::string StringReplace(const std::string& str, char oldChar, char newChar);
 std::vector<std::string> StringSplit(const std::string& s, char delimiter);
@@ -147,9 +148,8 @@ public:
     void UnregisterHotkey(int id);
 
 private:
-    std::unordered_map<int, std::pair<UINT, UINT>> hotkeys;
-    std::unordered_map<int, HotkeyCallback> callbacks;
-    std::mutex mtx;
+    concurrency::concurrent_unordered_map<int, std::pair<UINT, UINT>> hotkeys;
+    concurrency::concurrent_unordered_map<int, std::pair<HotkeyCallback, bool>> callbacks;
     bool isRunning = false;
     std::thread processThread;
     void MessageLoop();

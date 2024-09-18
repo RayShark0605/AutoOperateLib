@@ -372,16 +372,9 @@ AO_HotkeyManager::AO_HotkeyManager()
 AO_HotkeyManager::~AO_HotkeyManager()
 {
     isRunning = false;
+    for (auto& pair : callbacks)
     {
-        lock_guard<mutex> lock(mtx);
-        for (auto it = hotkeys.begin(); it != hotkeys.end();)
-        {
-            it = hotkeys.erase(it);
-        }
-        for (auto it = callbacks.begin(); it != callbacks.end();)
-        {
-            it = callbacks.erase(it);
-        }
+        pair.second.second = false;
     }
     if (processThread.joinable())
     {
@@ -391,20 +384,14 @@ AO_HotkeyManager::~AO_HotkeyManager()
 }
 void AO_HotkeyManager::RegisterHotkey(int id, UINT modifiers, UINT vk, HotkeyCallback callback)
 {
-    lock_guard<mutex> lock(mtx);
     hotkeys[id] = { modifiers, vk };
-    callbacks[id] = callback;
+    callbacks[id] = { callback,true };
 }
 void AO_HotkeyManager::UnregisterHotkey(int id)
 {
-    lock_guard<mutex> lock(mtx);
-    if (hotkeys.find(id) != hotkeys.end())
-    {
-        hotkeys.erase(id);
-    }
     if (callbacks.find(id) != callbacks.end())
     {
-        callbacks.erase(id);
+        callbacks[id].second = false;
     }
 }
 void AO_HotkeyManager::MessageLoop()
@@ -412,20 +399,17 @@ void AO_HotkeyManager::MessageLoop()
     // 必须确保 RegisterHotKey 和 GetMessage 事件循环在同一个线程
     while (isRunning)
     {
+        for (const auto& pair : hotkeys)
         {
-            lock_guard<mutex> lock(mtx);
-            for (const auto& pair : hotkeys)
-            {
-                RegisterHotKey(nullptr, pair.first, pair.second.first, pair.second.second);
-            }
+            RegisterHotKey(nullptr, pair.first, pair.second.first, pair.second.second);
         }
         
         MSG msg;
         while (GetMessage(&msg, NULL, 0, 0))
         {
-            if (msg.message == WM_HOTKEY && callbacks.find(msg.wParam) != callbacks.end())
+            if (msg.message == WM_HOTKEY && callbacks.find(msg.wParam) != callbacks.end() && callbacks[msg.wParam].second)
             {
-                callbacks[msg.wParam]();
+                callbacks[msg.wParam].first();
             }
             else if (msg.message == WM_QUIT)
             {
@@ -437,14 +421,10 @@ void AO_HotkeyManager::MessageLoop()
                 DispatchMessage(&msg);
             }
         }
+        for (const auto& pair : hotkeys)
         {
-            lock_guard<mutex> lock(mtx);
-            for (const auto& pair : hotkeys)
-            {
-                UnregisterHotKey(nullptr, pair.first);
-            }
+            UnregisterHotKey(nullptr, pair.first);
         }
-        
         WaitForMS(500);
     }
 }
