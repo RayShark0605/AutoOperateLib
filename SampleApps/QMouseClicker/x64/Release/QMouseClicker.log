@@ -1,9 +1,6 @@
-﻿  MainWindow.cpp
-  main.cpp
-  moc_MainWindow.cpp
-  正在生成代码
-  399 of 1130 functions (35.3%) were compiled, the rest were copied from previous compilation.
-    213 functions were new in current compilation
-    95 functions had inline decision re-evaluated but remain unchanged
+﻿  正在生成代码
+  137 of 1115 functions (12.3%) were compiled, the rest were copied from previous compilation.
+    0 functions were new in current compilation
+    68 functions had inline decision re-evaluated but remain unchanged
   已完成代码的生成
   QMouseClicker.vcxproj -> C:\Users\localuser\Desktop\AutoOperateLib\SampleApps\QMouseClicker\bin\x64\Release\鼠标连点器.exe

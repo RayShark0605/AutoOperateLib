@@ -115,7 +115,7 @@ void MainWindow::SetupUI()
 
 	setStyleSheet("background-color: white;");
 	setWindowFlags(windowFlags() | Qt::WindowStaysOnTopHint);
-	setBaseSize(QSize(400, 200));
+	setBaseSize(400, 200);
 	setWindowTitle(QStringLiteral("鼠标连点器"));
 }
 void MainWindow::StartClick()

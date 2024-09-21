@@ -904,7 +904,10 @@ AO_ActionRecorder::AO_ActionRecorder() : isRecording(false), isStopMessageLoop(f
 }
 AO_ActionRecorder::~AO_ActionRecorder()
 {
-    StopRecording(); // 确保在销毁对象时停止录制
+    if (isRecording)
+    {
+        StopRecording(); // 确保在销毁对象时停止录制
+    }
 }
 void AO_ActionRecorder::StartRecording()
 {
@@ -938,6 +941,14 @@ void AO_ActionRecorder::StopRecording()
 
     timer.Stop();
     isRecording = false;
+}
+void AO_ActionRecorder::ClearRecords()
+{
+    if (isRecording)
+    {
+        StopRecording();
+    }
+    records.clear();
 }
 vector<AO_ActionRecord> AO_ActionRecorder::GetRecords() const
 {
@@ -1047,18 +1058,40 @@ void AO_ActionRecorder::MessageLoop()
 AO_ActionSimulator::AO_ActionSimulator() : isRunning(false), isPaused(false)
 {
 }
-void AO_ActionSimulator::Start(const vector<AO_ActionRecord>& records)
+AO_ActionSimulator::~AO_ActionSimulator()
 {
+    isPaused = false;
+    isRunning = false;
+    if (simulationThread.joinable())
+    {
+        simulationThread.join();
+    }
+}
+void AO_ActionSimulator::Start(const vector<AO_ActionRecord>& records, Callback completedCallback)
+{
+    if (isRunning)
+    {
+        return;
+    }
+    this->completedCallback = completedCallback;
     this->records = records;
     isRunning = true;
     isPaused = false;
 
+    if (simulationThread.joinable())
+    {
+        simulationThread.join();
+    }
     simulationThread = thread(&AO_ActionSimulator::SimulateActions, this);
     const HANDLE threadHandle = simulationThread.native_handle();
     SetThreadPriority(threadHandle, THREAD_PRIORITY_HIGHEST);
 }
 void AO_ActionSimulator::WaitForEnd()
 {
+    if (!isRunning)
+    {
+        return;
+    }
     if (simulationThread.joinable())
     {
         simulationThread.join();
@@ -1066,17 +1099,30 @@ void AO_ActionSimulator::WaitForEnd()
 }
 void AO_ActionSimulator::Pause()
 {
+    if (isPaused || !isRunning)
+    {
+        return;
+    }
     unique_lock<mutex> lock(mtx);
     isPaused = true;
 }
 void AO_ActionSimulator::Resume()
 {
+    if (!isPaused || !isRunning)
+    {
+        return;
+    }
     unique_lock<mutex> lock(mtx);
     isPaused = false;
     conditionVariable.notify_one();
 }
 void AO_ActionSimulator::Stop()
 {
+    if (!isRunning)
+    {
+        return;
+    }
+    Resume();
     isRunning = false;
     if (simulationThread.joinable())
     {
@@ -1086,29 +1132,31 @@ void AO_ActionSimulator::Stop()
 void AO_ActionSimulator::SimulateActions()
 {
     AO_Timer timer;
-    timer.Start();
-    for (const AO_ActionRecord& record : records)
+    for (size_t i = 0; i < records.size(); i++)
     {
+        timer.Restart();
+        const long long gapTime = (i == 0 ? records[0].timeSinceStart : records[i].timeSinceStart - records[i - 1].timeSinceStart);
         while (isPaused)
         {
             unique_lock<mutex> lock(mtx);
             conditionVariable.wait(lock, [this]() { return !isPaused; });
         }
-
+        while (isRunning && (isPaused || timer.ElapsedMilliseconds() < gapTime));
         if (!isRunning)
         {
             break;
         }
 
-        const double elapsed = timer.ElapsedMilliseconds();
-        if (record.timeSinceStart > elapsed)
-        {
-            this_thread::sleep_for(chrono::milliseconds(static_cast<int>(record.timeSinceStart - elapsed)));
-        }
-
-        PerformAction(record);
+        PerformAction(records[i]);
     }
+
     isRunning = false;
+
+    if (completedCallback)
+    {
+        thread callbackThread(completedCallback);
+        callbackThread.detach();
+    }
 }
 void AO_ActionSimulator::PerformAction(const AO_ActionRecord& record)
 {
@@ -1628,13 +1676,15 @@ string GetCurrentProcessPath()
     wchar_t exePath[MAX_PATH];
     const DWORD size = GetModuleFileNameW(NULL, exePath, MAX_PATH);
 
-    if (size == 0) {
+    if (size == 0)
+    {
         return "";
     }
 
     // 获取转换后的UTF-8字符串所需的缓冲区大小
     const int bufferSize = WideCharToMultiByte(CP_UTF8, 0, exePath, -1, NULL, 0, NULL, NULL);
-    if (bufferSize == 0) {
+    if (bufferSize == 0)
+    {
         return "";
     }
 
@@ -1645,10 +1695,21 @@ string GetCurrentProcessPath()
     // 将缓冲区内容转换为string
     string fullPath(buffer.begin(), buffer.end() - 1);
 
-    // 可选：将路径中的反斜杠替换为斜杠
+    // 将路径中的反斜杠替换为斜杠
     replace(fullPath.begin(), fullPath.end(), '\\', '/');
 
     return fullPath;
+}
+
+string GetCurrentExeDir()
+{
+    const string exePath = GetCurrentProcessPath();
+    const size_t pos = exePath.find_last_of('/');
+    if (pos == string::npos)
+    {
+        return "";
+    }
+    return exePath.substr(0, pos);
 }
 
 vector<AO_Process> GetProcessesInfo()

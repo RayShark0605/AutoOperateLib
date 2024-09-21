@@ -342,8 +342,9 @@ class AO_ActionRecorder
 public:
     AO_ActionRecorder();
     ~AO_ActionRecorder();
-    void StartRecording();  // 开始录制
+    void StartRecording();  // 开始录制，这会清除之前已经录制的操作
     void StopRecording();   // 结束录制
+    void ClearRecords();    // 清除录制的操作，这会首先执行StopRecording来停止录制
     std::vector<AO_ActionRecord> GetRecords() const; // 获取录制的所有操作
 
 private:
@@ -368,7 +369,10 @@ class AO_ActionSimulator
 {
 public:
     AO_ActionSimulator();
-    void Start(const std::vector<AO_ActionRecord>& records); // 开始模拟（异步方式），不会阻塞当前线程
+    ~AO_ActionSimulator();
+
+    using Callback = std::function<void()>;
+    void Start(const std::vector<AO_ActionRecord>& records, Callback completedCallback = nullptr); // 开始模拟（异步方式），不会阻塞当前线程
     void WaitForEnd(); // 等待模拟结束，这会阻塞当前线程       
     void Pause();      // 暂停
     void Resume();     // 从暂停中恢复
@@ -381,6 +385,7 @@ private:
     std::thread simulationThread;
     std::condition_variable conditionVariable;
     std::mutex mtx;
+    Callback completedCallback = nullptr;
 
     void SimulateActions();
     void PerformAction(const AO_ActionRecord& record);
@@ -474,6 +479,9 @@ std::string GetCurrentProcessName(bool isContainExtensions = true);
 
 // 获取当前进程所在路径
 std::string GetCurrentProcessPath();
+
+// 获取当前exe所在的文件夹路径
+std::string GetCurrentExeDir();
 
 // 获取所有进程信息
 std::vector<AO_Process> GetProcessesInfo();
