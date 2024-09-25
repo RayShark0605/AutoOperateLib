@@ -38,7 +38,7 @@
 
 ### OCR文字识别
 - **调用API**：支持百度、阿里巴巴、腾讯的文字识别OCR API。
-- **简单调用**：无需关心API内部实现，只需通过IsScreenExistsWords一个函数就能非常方便地判断当前屏幕的目标区域是否存在某些文字，并且得到这些文字出现的位置。
+- **简单调用**：无需关心API内部实现，只需通过`IsScreenExistsWords`一个函数就能非常方便地判断当前屏幕的目标区域是否存在某些文字，并且得到这些文字出现的位置。
 
 ## 快速上手
 
@@ -256,6 +256,9 @@ int main(int argc, char* argv[])
 
 OperationRecorder是一个强大的键鼠录制工具，能够精确记录用户的键盘和鼠标操作，并支持后续回放。这款工具特别适合需要重复执行某些操作的场景，比如测试自动化或工作流程自动化。
 
+![1](https://github.com/user-attachments/assets/6e570d6b-24a8-4a43-b6d2-21b7e9015155)
+![2](https://github.com/user-attachments/assets/dc77c51f-9e3e-46de-9ff7-3fe759b2b558)
+
 主要特点：
 
 录制并保存操作为脚本文件，便于随时回放操作。
@@ -270,6 +273,8 @@ OperationRecorder是一个强大的键鼠录制工具，能够精确记录用户
 
 QMouseClicker是一个简单高效的工具，用于实时显示鼠标指针的当前位置及其对应的像素信息，特别适合需要精确点击的场景。此外，用户还可以通过快捷键启动连续快速的左键单击操作，适用于需要高频点击的应用场景，如游戏或自动化任务。
 
+![3](https://github.com/user-attachments/assets/4710c8ac-80db-4b0a-8013-9e24b5d274b7)
+
 主要特点：
 
 实时显示鼠标指针坐标和屏幕像素颜色，适合调试和开发。
@@ -282,6 +287,8 @@ QMouseClicker是一个简单高效的工具，用于实时显示鼠标指针的�
 - **WindowShift**
 
 WindowShift是一款极具实用性的“老板键”工具。通过配置文件的设定，用户可以使用快捷键快速隐藏指定窗口并将某个窗口置顶。这款工具特别适合在多任务场景中快速隐藏敏感窗口，保护隐私，恢复时也十分方便。
+
+![4](https://github.com/user-attachments/assets/6a9ddcdb-ae8d-442f-9674-139078834697)
 
 主要特点：
 
