@@ -9,6 +9,10 @@
 #include <unordered_map>
 #include <concurrent_unordered_map.h>
 
+#ifndef M_PI
+#define M_PI 3.14159265358979323846
+#endif
+
 std::string StringReplace(const std::string& str, char oldChar, char newChar);
 std::vector<std::string> StringSplit(const std::string& s, char delimiter);
 std::wstring StringToWString(const std::string& str);
@@ -560,7 +564,7 @@ struct AO_Color
     static double CalculteSimilarity(const AO_Color& color1, const AO_Color& color2);
 };
 
-// 获取全局屏幕(x, y)坐标处的像素值
+// 获取全局屏幕(x, y)坐标处的颜色值
 AO_Color GetScreenPixelColor(int x, int y);
 AO_Color GetScreenPixelColor(const AO_Point& point);
 

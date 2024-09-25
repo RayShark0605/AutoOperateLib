@@ -1,15 +1,19 @@
  
 .vs/AutoOperateLib/v17/Browse.VC.db 
 .vs/AutoOperateLib/v17/Solution.VC.db 
+.vs/AutoOperateLib/v17/ipch/AutoPCH/13199a8ea96d5863/TEST.ipch 
 .vs/AutoOperateLib/v17/ipch/AutoPCH/14e5ebe773170e3e/MAINWINDOW.ipch 
 .vs/AutoOperateLib/v17/ipch/AutoPCH/1c311a4ccfbec92b/MAINWINDOW.ipch 
+.vs/AutoOperateLib/v17/ipch/AutoPCH/30cf0f1f4f3969e9/TEST.ipch 
 .vs/AutoOperateLib/v17/ipch/AutoPCH/314237c192e02032/BASE.ipch 
 .vs/AutoOperateLib/v17/ipch/AutoPCH/ac1e815ae49f21f9/MAINWINDOW.ipch 
 .vs/AutoOperateLib/v17/ipch/AutoPCH/c9ceabced9fd94df/MAIN.ipch 
+.vs/AutoOperateLib/v17/ipch/AutoPCH/d0109982ba363f40/CV.ipch 
+.vs/AutoOperateLib/v17/ipch/AutoPCH/d8df252be014e9c5/MAIN.ipch 
 .vs/AutoOperateLib/v17/ipch/AutoPCH/ddd9b16867465995/MAIN.ipch 
 .vs/AutoOperateLib/v17/ipch/AutoPCH/e0ea04e2ae5d2a80/BASE.ipch 
 .vs/AutoOperateLib/v17/ipch/AutoPCH/ee28f0354857a435/MOC_MAINWINDOW.ipch 
-.vs/AutoOperateLib/v17/ipch/AutoPCH/fe9b4a8d54c2b3e9/MAINWINDOW.ipch 
+.vs/AutoOperateLib/v17/ipch/AutoPCH/f9fb5cfbf1715cd7/MAIN.ipch 
 AutoOperateLib/x64/Debug/AutoOperateLib.obj 
 AutoOperateLib/x64/Debug/Base.obj 
 AutoOperateLib/x64/Debug/CV.obj 
@@ -62,6 +66,8 @@ Test/x64/Debug/Test.ilk
 Test/x64/Debug/test.obj.enc 
 Test/x64/Debug/vc143.idb 
 Test/x64/Debug/vc143.pdb 
+Test/x64/Release/Test.iobj 
+Test/x64/Release/Test.ipdb 
 Test/x64/Release/Test.obj 
 Test/x64/Release/vc143.pdb 
 Thirdparty/curl/bin/Debug/libcurl-d.dll 
@@ -171,6 +177,7 @@ x64/Debug/libcurl-d.dll
 x64/Debug/libssl-3-x64.dll 
 x64/Debug/libssl-3-x64.pdb 
 x64/Debug/opencv_world3415d.dll 
+x64/Debug/Test.exe 
 x64/Debug/Test.pdb 
 x64/Release/AutoOperateLib.lib 
 x64/Release/AutoOperateLib.pdb 

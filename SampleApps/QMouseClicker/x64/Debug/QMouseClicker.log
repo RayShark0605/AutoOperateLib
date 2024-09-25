@@ -1,2 +1,4 @@
-﻿  Reading Qt configuration (D:/Code/Qt/5.14.2/msvc2017_64/bin/qmake)
+﻿  MainWindow.cpp
+  main.cpp
+  moc_MainWindow.cpp
   QMouseClicker.vcxproj -> C:\Users\localuser\Desktop\AutoOperateLib\SampleApps\QMouseClicker\bin\x64\Debug\鼠标连点器.exe
